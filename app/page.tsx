@@ -178,7 +178,7 @@ export default function Dashboard() {
                 </p>
               </CardContent>
             </Card>
-            <Card>
+            {/*<Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Collaborations</CardTitle>
                 <Users2 className="h-4 w-4 text-muted-foreground" />
@@ -189,8 +189,9 @@ export default function Dashboard() {
                   <span className="text-green-600">+8.2%</span> from last month
                 </p>
               </CardContent>
-            </Card>
-            <Card>
+            </Card>*/}
+
+            {/*<Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pending Reports</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -201,8 +202,9 @@ export default function Dashboard() {
                   <span className="text-red-600">+3</span> new this week
                 </p>
               </CardContent>
-            </Card>
-            <Card>
+            </Card>*/}
+
+            {/*<Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Monthly Growth</CardTitle>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -211,7 +213,8 @@ export default function Dashboard() {
                 <div className="text-2xl font-bold">+15.3%</div>
                 <p className="text-xs text-muted-foreground">User registration rate</p>
               </CardContent>
-            </Card>
+            </Card>*/}
+            
           </div>
 
           {/* Charts Section */}
