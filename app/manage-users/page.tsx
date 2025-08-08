@@ -2,8 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { Check, UserX } from "lucide-react";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  gender: string;
+  year: string;
+  status: string;
+  university: string;
+  avatar: string;
+  joinDate: string;
+}
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +34,7 @@ import { DashboardLayout } from "../dashboard-layout";
 import { fetchUsersFromBackend } from "@/lib/fetchUsers"; // 👈
 
 export default function ManageUsers() {
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -156,7 +167,9 @@ export default function ManageUsers() {
                       <SelectValue placeholder="Gender" />
                     </SelectTrigger>
                     <SelectContent className="bg-black">
-                      <SelectItem value="all" className="">All Genders</SelectItem>
+                      <SelectItem value="all" className="">
+                        All Genders
+                      </SelectItem>
                       <SelectItem value="Male">Male</SelectItem>
                       <SelectItem value="Female">Female</SelectItem>
                       <SelectItem value="Non-binary">Non-binary</SelectItem>
