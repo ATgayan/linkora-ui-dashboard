@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useCallback } from "react"
-import { useRouter, usePathname } from "next/navigation"
-import Link from "next/link"
+import type React from "react";
+import { useState, useCallback } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   BarChart3,
   Bell,
@@ -17,10 +17,10 @@ import {
   Settings,
   Users,
   Users2,
-} from "lucide-react"
+} from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,9 +28,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   Sidebar,
   SidebarContent,
@@ -43,8 +43,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-} from "@/components/ui/sidebar"
-import { useAuth } from "@/components/auth-provider"
+} from "@/components/ui/sidebar";
+import { useAuth } from "@/components/auth-provider";
 
 const navigationItems = [
   {
@@ -63,33 +63,32 @@ const navigationItems = [
     href: "/reports",
     icon: Flag,
   },
-  
-]
+];
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(false)
-  const router = useRouter()
-  const pathname = usePathname()
-  const { userEmail, logout } = useAuth()
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { userEmail, logout } = useAuth();
 
   const handleNavigation = useCallback(
     (path: string) => {
-      setOpen(false)
-      router.push(path)
+      setOpen(false);
+      router.push(path);
     },
-    [router],
-  )
+    [router]
+  );
 
   const isActive = useCallback(
     (path: string) => {
-      return pathname === path
+      return pathname === path;
     },
-    [pathname],
-  )
+    [pathname]
+  );
 
   const handleLogout = () => {
-    logout()
-  }
+    logout();
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -105,7 +104,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <SheetContent side="left" className="w-72 p-0">
             <div className="flex h-full flex-col">
               <div className="flex h-16 items-center border-b px-6">
-                <Link href="/" className="flex items-center gap-2 font-semibold">
+                <Link
+                  href="/"
+                  className="flex items-center gap-2 font-semibold"
+                >
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                     <BarChart3 className="h-4 w-4" />
                   </div>
@@ -116,7 +118,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </div>
               <nav className="flex-1 space-y-2 p-4">
                 {navigationItems.map((item) => {
-                  const Icon = item.icon
+                  const Icon = item.icon;
                   return (
                     <Link
                       key={item.href}
@@ -131,7 +133,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       <Icon className="h-4 w-4" />
                       {item.title}
                     </Link>
-                  )
+                  );
                 })}
               </nav>
             </div>
@@ -167,25 +169,26 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {navigationItems.map((item) => {
-                      const Icon = item.icon
+                      const Icon = item.icon;
                       return (
                         <SidebarMenuItem key={item.href}>
-                          <SidebarMenuButton asChild isActive={isActive(item.href)}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={isActive(item.href)}
+                          >
                             <Link href={item.href}>
                               <Icon className="h-4 w-4" />
                               <span>{item.title}</span>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
-                      )
+                      );
                     })}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="border-t p-4">
-              
-            </SidebarFooter>
+            <SidebarFooter className="border-t p-4"></SidebarFooter>
           </Sidebar>
 
           <div className="flex flex-1 flex-col">
@@ -193,10 +196,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <header className="sticky top-0 z-30 hidden h-16 items-center gap-4 border-b bg-background px-6 md:flex bg-black">
               <div className="flex flex-1 items-center gap-4">
                 <div className="relative flex-1 max-w-md">
-                 {/* <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />*/}
+                  {/* <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />*/}
 
                   {/*<Input type="search" placeholder="Search users, collaborations..." className="w-full pl-8 bg-black" />*/}
-
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -209,14 +211,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2" >
+                    <Button variant="ghost" className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="/placeholder.svg?height=32&width=32" alt="Admin" />
-                        <AvatarFallback>AD</AvatarFallback>
+                        <AvatarImage src="/placeholder-user.jpg" alt="User" />
+                        <AvatarFallback>
+                          <Users2 className="h-4 w-4" />
+                        </AvatarFallback>
                       </Avatar>
-                      <div className="hidden text-left lg:block" >
+                      <div className="hidden text-left lg:block">
                         <p className="text-sm font-medium">Admin User</p>
-                        <p className="text-xs text-muted-foreground">{userEmail}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {userEmail}
+                        </p>
                       </div>
                       <ChevronDown className="h-4 w-4" />
                     </Button>
@@ -233,7 +239,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       Profile
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+                    <DropdownMenuItem
+                      className="text-red-600"
+                      onClick={handleLogout}
+                    >
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign out
                     </DropdownMenuItem>
@@ -248,7 +257,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </SidebarProvider>
       </div>
     </div>
-  )
+  );
 }
 
-export default DashboardLayout
+export default DashboardLayout;
