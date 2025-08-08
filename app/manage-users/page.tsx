@@ -71,7 +71,7 @@ export default function ManageUsers() {
   const handleApprove = (userId: number) => {
     setUsers((prev) =>
       prev.map((user) =>
-        user.id === userId ? { ...user, status: "active" } : user
+        user.id === userId ? { ...user, status: "Active" } : user
       )
     );
   };
@@ -79,7 +79,7 @@ export default function ManageUsers() {
   const handleBan = (userId: number) => {
     setUsers((prev) =>
       prev.map((user) =>
-        user.id === userId ? { ...user, status: "banned" } : user
+        user.id === userId ? { ...user, status: "Banned" } : user
       )
     );
   };
@@ -102,22 +102,22 @@ export default function ManageUsers() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "active":
+      case "Active":
         return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+          <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
             Active
           </Badge>
         );
-      case "pending":
+      case "Pending":
         return (
           <Badge
             variant="outline"
-            className="bg-yellow-100 text-yellow-800 border-yellow-300"
+            className="bg-amber-100 text-amber-800 border-amber-300"
           >
             Pending
           </Badge>
         );
-      case "banned":
+      case "Banned":
         return <Badge variant="destructive">Banned</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -306,25 +306,38 @@ export default function ManageUsers() {
                       <td className="p-4">{getStatusBadge(user.status)}</td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          {user.status === "pending" && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleApprove(user.id)}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <Check className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                          )}
-                          {user.status !== "banned" && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleBan(user.id)}
-                            >
-                              <UserX className="h-4 w-4 mr-1" />
-                              Ban
-                            </Button>
+                          {user.status === "Pending" ? (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => handleApprove(user.id)}
+                                className="bg-emerald-500 hover:bg-emerald-600 text-white transition-colors flex items-center gap-1.5 px-2.5 py-1.5"
+                              >
+                                <Check className="h-4 w-4" />
+                                <span>Approve</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleBan(user.id)}
+                                className="flex items-center gap-1.5 px-2.5 py-1.5"
+                              >
+                                <UserX className="h-4 w-4" />
+                                <span>Ban User</span>
+                              </Button>
+                            </>
+                          ) : (
+                            user.status !== "Banned" && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleBan(user.id)}
+                                className="flex items-center gap-1.5 px-3 py-1.5"
+                              >
+                                <UserX className="h-4 w-4" />
+                                <span>Ban User</span>
+                              </Button>
+                            )
                           )}
                         </div>
                       </td>
