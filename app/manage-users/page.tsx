@@ -1,24 +1,30 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Check, MoreHorizontal, Search, Trash2, UserX } from "lucide-react"
+import { useState } from "react";
+import { Check, MoreHorizontal, Search, Trash2, UserX } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ThemeProvider } from "@/components/theme-provider"
-import { DashboardLayout } from "../dashboard-layout"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ThemeProvider } from "@/components/theme-provider";
+import { DashboardLayout } from "../dashboard-layout";
 
 // Sample user data
 const initialUsers = [
@@ -77,79 +83,158 @@ const initialUsers = [
     university: "UC Berkeley",
     joinDate: "2024-01-05",
   },
-]
+  {
+    id: 1,
+    name: "Alex Johnson",
+    email: "alex.johnson@stanford.edu",
+    avatar: "/placeholder.svg?height=40&width=40",
+    gender: "Male",
+    year: "2nd Year",
+    status: "pending",
+    university: "Stanford University",
+    joinDate: "2024-01-15",
+  },
+  {
+    id: 2,
+    name: "Maya Patel",
+    email: "maya.patel@mit.edu",
+    avatar: "/placeholder.svg?height=40&width=40",
+    gender: "Female",
+    year: "3rd Year",
+    status: "active",
+    university: "MIT",
+    joinDate: "2024-01-10",
+  },
+  {
+    id: 3,
+    name: "Jordan Lee",
+    email: "jordan.lee@harvard.edu",
+    avatar: "/placeholder.svg?height=40&width=40",
+    gender: "Non-binary",
+    year: "1st Year",
+    status: "pending",
+    university: "Harvard University",
+    joinDate: "2024-01-12",
+  },
+  {
+    id: 4,
+    name: "Taylor Smith",
+    email: "taylor.smith@ucla.edu",
+    avatar: "/placeholder.svg?height=40&width=40",
+    gender: "Female",
+    year: "4th Year",
+    status: "active",
+    university: "UCLA",
+    joinDate: "2024-01-08",
+  },
+  {
+    id: 5,
+    name: "Sam Rodriguez",
+    email: "sam.rodriguez@berkeley.edu",
+    avatar: "/placeholder.svg?height=40&width=40",
+    gender: "Male",
+    year: "2nd Year",
+    status: "banned",
+    university: "UC Berkeley",
+    joinDate: "2024-01-05",
+  },
+];
 
 export default function ManageUsers() {
-  const [users, setUsers] = useState(initialUsers)
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [genderFilter, setGenderFilter] = useState("all")
-  const [yearFilter, setYearFilter] = useState("all")
+  const [users, setUsers] = useState(initialUsers);
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState("all");
+  const [yearFilter, setYearFilter] = useState("all");
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === "all" || user.status === statusFilter
-    const matchesGender = genderFilter === "all" || user.gender === genderFilter
-    const matchesYear = yearFilter === "all" || user.year === yearFilter
+      user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || user.status === statusFilter;
+    const matchesGender =
+      genderFilter === "all" || user.gender === genderFilter;
+    const matchesYear = yearFilter === "all" || user.year === yearFilter;
 
-    return matchesSearch && matchesStatus && matchesGender && matchesYear
-  })
+    return matchesSearch && matchesStatus && matchesGender && matchesYear;
+  });
 
   const handleApprove = (userId: number) => {
-    setUsers(users.map((user) => (user.id === userId ? { ...user, status: "active" } : user)))
-  }
+    setUsers(
+      users.map((user) =>
+        user.id === userId ? { ...user, status: "active" } : user
+      )
+    );
+  };
 
   const handleBan = (userId: number) => {
-    setUsers(users.map((user) => (user.id === userId ? { ...user, status: "banned" } : user)))
-  }
+    setUsers(
+      users.map((user) =>
+        user.id === userId ? { ...user, status: "banned" } : user
+      )
+    );
+  };
 
   const handleDelete = (userId: number) => {
-    setUsers(users.filter((user) => user.id !== userId))
-  }
+    setUsers(users.filter((user) => user.id !== userId));
+  };
 
   const toggleSelectUser = (userId: number) => {
-    setSelectedUsers((prev) => (prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]))
-  }
+    setSelectedUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
+    );
+  };
 
   const toggleSelectAll = () => {
     if (selectedUsers.length === filteredUsers.length) {
-      setSelectedUsers([])
+      setSelectedUsers([]);
     } else {
-      setSelectedUsers(filteredUsers.map((user) => user.id))
+      setSelectedUsers(filteredUsers.map((user) => user.id));
     }
-  }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>
+        return (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+            Active
+          </Badge>
+        );
       case "pending":
         return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+          <Badge
+            variant="outline"
+            className="bg-yellow-100 text-yellow-800 border-yellow-300"
+          >
             Pending
           </Badge>
-        )
+        );
       case "banned":
-        return <Badge variant="destructive">Banned</Badge>
+        return <Badge variant="destructive">Banned</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <Badge variant="outline">{status}</Badge>;
     }
-  }
+  };
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <DashboardLayout>
-        <div className="flex flex-col gap-6 p-4 md:p-8">
+        {/* Layout wrapper to prevent full-page scroll */}
+        <div className="flex flex-col h-screen overflow-hidden p-4 md:p-8">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Manage Users</h1>
-            <p className="text-muted-foreground">Review and manage user accounts on the platform</p>
+            <p className="text-muted-foreground">
+              Review and manage user accounts on the platform
+            </p>
           </div>
 
           {/* Filters */}
-          <Card>
+          <Card className="mt-6">
             <CardHeader>
               <CardTitle>Filters & Search</CardTitle>
             </CardHeader>
@@ -204,100 +289,116 @@ export default function ManageUsers() {
             </CardContent>
           </Card>
 
-          {/* Users Table */}
-          <Card>
+          {/* Scrollable Table */}
+          <Card className="flex-1 overflow-hidden mt-6">
             <CardHeader>
               <CardTitle>Users ({filteredUsers.length})</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="border-b bg-muted/50">
-                    <tr>
-                      <th className="p-4 text-left">
+            <CardContent className="p-0 h-full overflow-auto">
+              <table className="w-full min-w-[800px] bg-black">
+                <thead className="border-b bg-muted/50 sticky top-0 z-10">
+                  <tr className="text-sm font-medium text-muted-foreground bg-black">
+                    <th className="p-4 text-left bg-black">
+                      <Checkbox
+                        checked={
+                          filteredUsers.length > 0 &&
+                          selectedUsers.length === filteredUsers.length
+                        }
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </th>
+                    <th className="p-4 text-left font-medium">User</th>
+                    <th className="p-4 text-left font-medium">Email</th>
+                    <th className="p-4 text-left font-medium">Gender</th>
+                    <th className="p-4 text-left font-medium">Year</th>
+                    <th className="p-4 text-left font-medium">Status</th>
+                    <th className="p-4 text-left font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="border-b hover:bg-muted/50">
+                      <td className="p-4">
                         <Checkbox
-                          checked={filteredUsers.length > 0 && selectedUsers.length === filteredUsers.length}
-                          onCheckedChange={toggleSelectAll}
+                          checked={selectedUsers.includes(user.id)}
+                          onCheckedChange={() => toggleSelectUser(user.id)}
                         />
-                      </th>
-                      <th className="p-4 text-left font-medium">User</th>
-                      <th className="p-4 text-left font-medium">Email</th>
-                      <th className="p-4 text-left font-medium">Gender</th>
-                      <th className="p-4 text-left font-medium">Year</th>
-                      <th className="p-4 text-left font-medium">Status</th>
-                      <th className="p-4 text-left font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map((user) => (
-                      <tr key={user.id} className="border-b hover:bg-muted/50">
-                        <td className="p-4">
-                          <Checkbox
-                            checked={selectedUsers.includes(user.id)}
-                            onCheckedChange={() => toggleSelectUser(user.id)}
-                          />
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium">{user.name}</div>
-                              <div className="text-sm text-muted-foreground">{user.university}</div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage
+                              src={user.avatar || "/placeholder.svg"}
+                              alt={user.name}
+                            />
+                            <AvatarFallback>
+                              {user.name.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{user.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {user.university}
                             </div>
                           </div>
-                        </td>
-                        <td className="p-4 text-sm">{user.email}</td>
-                        <td className="p-4 text-sm">{user.gender}</td>
-                        <td className="p-4 text-sm">{user.year}</td>
-                        <td className="p-4">{getStatusBadge(user.status)}</td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            {user.status === "pending" && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleApprove(user.id)}
-                                className="bg-green-600 hover:bg-green-700"
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm">{user.email}</td>
+                      <td className="p-4 text-sm">{user.gender}</td>
+                      <td className="p-4 text-sm">{user.year}</td>
+                      <td className="p-4">{getStatusBadge(user.status)}</td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          {user.status === "pending" && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleApprove(user.id)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                          )}
+                          {user.status !== "banned" && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleBan(user.id)}
+                            >
+                              <UserX className="h-4 w-4 mr-1" />
+                              Ban
+                            </Button>
+                          )}
+
+                          {/*<DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {/*<DropdownMenuItem>View Profile</DropdownMenuItem>
+                              <DropdownMenuItem>Edit User</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => handleDelete(user.id)}
                               >
-                                <Check className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
-                            )}
-                            {user.status !== "banned" && (
-                              <Button size="sm" variant="destructive" onClick={() => handleBan(user.id)}>
-                                <UserX className="h-4 w-4 mr-1" />
-                                Ban
-                              </Button>
-                            )}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>View Profile</DropdownMenuItem>
-                                <DropdownMenuItem>Edit User</DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(user.id)}>
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>*/}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </CardContent>
           </Card>
         </div>
       </DashboardLayout>
     </ThemeProvider>
-  )
+  );
 }
