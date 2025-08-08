@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Check, MoreHorizontal, Search, Trash2, UserX } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, UserX } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -9,144 +9,40 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DashboardLayout } from "../dashboard-layout";
 
-// Sample user data
-const initialUsers = [
-  {
-    id: 1,
-    name: "Alex Johnson",
-    email: "alex.johnson@stanford.edu",
-    avatar: "/placeholder.svg?height=40&width=40",
-    gender: "Male",
-    year: "2nd Year",
-    status: "pending",
-    university: "Stanford University",
-    joinDate: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Maya Patel",
-    email: "maya.patel@mit.edu",
-    avatar: "/placeholder.svg?height=40&width=40",
-    gender: "Female",
-    year: "3rd Year",
-    status: "active",
-    university: "MIT",
-    joinDate: "2024-01-10",
-  },
-  {
-    id: 3,
-    name: "Jordan Lee",
-    email: "jordan.lee@harvard.edu",
-    avatar: "/placeholder.svg?height=40&width=40",
-    gender: "Non-binary",
-    year: "1st Year",
-    status: "pending",
-    university: "Harvard University",
-    joinDate: "2024-01-12",
-  },
-  {
-    id: 4,
-    name: "Taylor Smith",
-    email: "taylor.smith@ucla.edu",
-    avatar: "/placeholder.svg?height=40&width=40",
-    gender: "Female",
-    year: "4th Year",
-    status: "active",
-    university: "UCLA",
-    joinDate: "2024-01-08",
-  },
-  {
-    id: 5,
-    name: "Sam Rodriguez",
-    email: "sam.rodriguez@berkeley.edu",
-    avatar: "/placeholder.svg?height=40&width=40",
-    gender: "Male",
-    year: "2nd Year",
-    status: "banned",
-    university: "UC Berkeley",
-    joinDate: "2024-01-05",
-  },
-  {
-    id: 1,
-    name: "Alex Johnson",
-    email: "alex.johnson@stanford.edu",
-    avatar: "/placeholder.svg?height=40&width=40",
-    gender: "Male",
-    year: "2nd Year",
-    status: "pending",
-    university: "Stanford University",
-    joinDate: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Maya Patel",
-    email: "maya.patel@mit.edu",
-    avatar: "/placeholder.svg?height=40&width=40",
-    gender: "Female",
-    year: "3rd Year",
-    status: "active",
-    university: "MIT",
-    joinDate: "2024-01-10",
-  },
-  {
-    id: 3,
-    name: "Jordan Lee",
-    email: "jordan.lee@harvard.edu",
-    avatar: "/placeholder.svg?height=40&width=40",
-    gender: "Non-binary",
-    year: "1st Year",
-    status: "pending",
-    university: "Harvard University",
-    joinDate: "2024-01-12",
-  },
-  {
-    id: 4,
-    name: "Taylor Smith",
-    email: "taylor.smith@ucla.edu",
-    avatar: "/placeholder.svg?height=40&width=40",
-    gender: "Female",
-    year: "4th Year",
-    status: "active",
-    university: "UCLA",
-    joinDate: "2024-01-08",
-  },
-  {
-    id: 5,
-    name: "Sam Rodriguez",
-    email: "sam.rodriguez@berkeley.edu",
-    avatar: "/placeholder.svg?height=40&width=40",
-    gender: "Male",
-    year: "2nd Year",
-    status: "banned",
-    university: "UC Berkeley",
-    joinDate: "2024-01-05",
-  },
-];
+// 👇 import your fetch function (make sure path is correct)
+import { fetchUsersFromBackend } from "@/lib/fetchUsers"; // 👈
 
 export default function ManageUsers() {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
+
+  // ✅ Fetch user data from backend on first render
+  useEffect(() => {
+    fetchUsersFromBackend().then((data) => {
+      // Add missing fields like id, avatar, joinDate if not provided by backend
+      const enhanced = data.map((user, index) => ({
+        ...user,
+        id: index + 1,
+        avatar: "/placeholder.svg?height=40&width=40",
+        joinDate: "2024-01-01", // static placeholder
+      }));
+      setUsers(enhanced);
+    });
+  }, []);
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
@@ -162,23 +58,19 @@ export default function ManageUsers() {
   });
 
   const handleApprove = (userId: number) => {
-    setUsers(
-      users.map((user) =>
+    setUsers((prev) =>
+      prev.map((user) =>
         user.id === userId ? { ...user, status: "active" } : user
       )
     );
   };
 
   const handleBan = (userId: number) => {
-    setUsers(
-      users.map((user) =>
+    setUsers((prev) =>
+      prev.map((user) =>
         user.id === userId ? { ...user, status: "banned" } : user
       )
     );
-  };
-
-  const handleDelete = (userId: number) => {
-    setUsers(users.filter((user) => user.id !== userId));
   };
 
   const toggleSelectUser = (userId: number) => {
@@ -224,7 +116,6 @@ export default function ManageUsers() {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <DashboardLayout>
-        {/* Layout wrapper to prevent full-page scroll */}
         <div className="flex flex-col h-screen overflow-hidden p-4 md:p-8">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Manage Users</h1>
@@ -241,7 +132,6 @@ export default function ManageUsers() {
             <CardContent>
               <div className="flex flex-col gap-4 md:flex-row md:items-center">
                 <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search users..."
                     value={searchQuery}
@@ -254,7 +144,7 @@ export default function ManageUsers() {
                     <SelectTrigger className="w-32">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-black">
                       <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
@@ -265,8 +155,8 @@ export default function ManageUsers() {
                     <SelectTrigger className="w-32">
                       <SelectValue placeholder="Gender" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Genders</SelectItem>
+                    <SelectContent className="bg-black">
+                      <SelectItem value="all" className="">All Genders</SelectItem>
                       <SelectItem value="Male">Male</SelectItem>
                       <SelectItem value="Female">Female</SelectItem>
                       <SelectItem value="Non-binary">Non-binary</SelectItem>
@@ -276,7 +166,7 @@ export default function ManageUsers() {
                     <SelectTrigger className="w-32">
                       <SelectValue placeholder="Year" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-black">
                       <SelectItem value="all">All Years</SelectItem>
                       <SelectItem value="1st Year">1st Year</SelectItem>
                       <SelectItem value="2nd Year">2nd Year</SelectItem>
@@ -289,16 +179,16 @@ export default function ManageUsers() {
             </CardContent>
           </Card>
 
-          {/* Scrollable Table */}
+          {/* Table */}
           <Card className="flex-1 overflow-hidden mt-6">
             <CardHeader>
               <CardTitle>Users ({filteredUsers.length})</CardTitle>
             </CardHeader>
             <CardContent className="p-0 h-full overflow-auto">
-              <table className="w-full min-w-[800px] bg-black">
+              <table className="w-full min-w-[800px]">
                 <thead className="border-b bg-muted/50 sticky top-0 z-10">
                   <tr className="text-sm font-medium text-muted-foreground bg-black">
-                    <th className="p-4 text-left bg-black">
+                    <th className="p-4 text-left">
                       <Checkbox
                         checked={
                           filteredUsers.length > 0 &&
@@ -327,10 +217,7 @@ export default function ManageUsers() {
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <Avatar>
-                            <AvatarImage
-                              src={user.avatar || "/placeholder.svg"}
-                              alt={user.name}
-                            />
+                            <AvatarImage src={user.avatar} alt={user.name} />
                             <AvatarFallback>
                               {user.name.charAt(0)}
                             </AvatarFallback>
@@ -369,26 +256,6 @@ export default function ManageUsers() {
                               Ban
                             </Button>
                           )}
-
-                          {/*<DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {/*<DropdownMenuItem>View Profile</DropdownMenuItem>
-                              <DropdownMenuItem>Edit User</DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={() => handleDelete(user.id)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>*/}
                         </div>
                       </td>
                     </tr>
