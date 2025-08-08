@@ -57,11 +57,7 @@ const navigationItems = [
     href: "/manage-users",
     icon: Users,
   },
-  {
-    title: "Manage Collaborations",
-    href: "/manage-collaborations",
-    icon: Users2,
-  },
+
   {
     title: "Reports",
     href: "/reports",
