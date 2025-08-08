@@ -32,8 +32,10 @@ import { DashboardLayout } from "../dashboard-layout";
 
 // 👇 import your fetch function (make sure path is correct)
 import { fetchUsersFromBackend } from "@/lib/fetchUsers"; // 👈
+import { useToast } from "@/components/ui/use-toast";
 
 export default function ManageUsers() {
+  const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,9 +46,10 @@ export default function ManageUsers() {
   // ✅ Fetch user data from backend on first render
   useEffect(() => {
     fetchUsersFromBackend().then((data) => {
-      // Add missing fields like id, avatar, joinDate if not provided by backend
+      // Add missing fields and normalize status to lowercase
       const enhanced = data.map((user, index) => ({
         ...user,
+        status: user.status ? user.status.toLowerCase() : "pending",
         id: index + 1,
         avatar: "/placeholder.svg?height=40&width=40",
         joinDate: "2024-01-01", // static placeholder
@@ -71,17 +74,27 @@ export default function ManageUsers() {
   const handleApprove = (userId: number) => {
     setUsers((prev) =>
       prev.map((user) =>
-        user.id === userId ? { ...user, status: "Active" } : user
+        user.id === userId ? { ...user, status: "active" } : user
       )
     );
+    toast({
+      title: "User Approved",
+      description: "The user has been approved and is now active.",
+      status: "success",
+    });
   };
 
   const handleBan = (userId: number) => {
     setUsers((prev) =>
       prev.map((user) =>
-        user.id === userId ? { ...user, status: "Banned" } : user
+        user.id === userId ? { ...user, status: "banned" } : user
       )
     );
+    toast({
+      title: "User Banned",
+      description: "The user has been banned.",
+      status: "error",
+    });
   };
 
   const toggleSelectUser = (userId: number) => {
@@ -102,22 +115,22 @@ export default function ManageUsers() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Active":
+      case "active":
         return (
-          <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
             Active
           </Badge>
         );
-      case "Pending":
+      case "pending":
         return (
           <Badge
             variant="outline"
-            className="bg-amber-100 text-amber-800 border-amber-300"
+            className="bg-yellow-100 text-yellow-800 border-yellow-300"
           >
             Pending
           </Badge>
         );
-      case "Banned":
+      case "banned":
         return <Badge variant="destructive">Banned</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -163,19 +176,19 @@ export default function ManageUsers() {
                         All Status
                       </SelectItem>
                       <SelectItem
-                        value="Active"
+                        value="active"
                         className="hover:bg-gray-100 dark:hover:bg-gray-800"
                       >
                         Active
                       </SelectItem>
                       <SelectItem
-                        value="Pending"
+                        value="pending"
                         className="hover:bg-gray-100 dark:hover:bg-gray-800"
                       >
                         Pending
                       </SelectItem>
                       <SelectItem
-                        value="Banned"
+                        value="banned"
                         className="hover:bg-gray-100 dark:hover:bg-gray-800"
                       >
                         Banned
@@ -306,39 +319,24 @@ export default function ManageUsers() {
                       <td className="p-4">{getStatusBadge(user.status)}</td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          {user.status === "Pending" ? (
-                            <>
-                              <Button
-                                size="sm"
-                                onClick={() => handleApprove(user.id)}
-                                className="bg-emerald-500 hover:bg-emerald-600 text-white transition-colors flex items-center gap-1.5 px-2.5 py-1.5"
-                              >
-                                <Check className="h-4 w-4" />
-                                <span>Approve</span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleBan(user.id)}
-                                className="flex items-center gap-1.5 px-2.5 py-1.5"
-                              >
-                                <UserX className="h-4 w-4" />
-                                <span>Ban User</span>
-                              </Button>
-                            </>
-                          ) : (
-                            user.status !== "Banned" && (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleBan(user.id)}
-                                className="flex items-center gap-1.5 px-3 py-1.5"
-                              >
-                                <UserX className="h-4 w-4" />
-                                <span>Ban User</span>
-                              </Button>
-                            )
-                          )}
+                          <Button
+                            size="sm"
+                            onClick={() => handleApprove(user.id)}
+                            className="bg-green-600 hover:bg-green-700"
+                            disabled={user.status === "active"}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleBan(user.id)}
+                            disabled={user.status === "banned"}
+                          >
+                            <UserX className="h-4 w-4 mr-1" />
+                            Ban
+                          </Button>
                         </div>
                       </td>
                     </tr>
