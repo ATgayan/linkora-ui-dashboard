@@ -35,6 +35,17 @@ import { fetchUsersFromBackend } from "@/lib/fetchUsers"; // 👈
 import { useToast } from "@/components/ui/use-toast";
 
 export default function ManageUsers() {
+  const handleResolve = (userId: number) => {
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.id === userId ? { ...user, status: "resolved" } : user
+      )
+    );
+    toast({
+      title: "User Resolved",
+      description: "The user's issue has been marked as resolved.",
+    });
+  };
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
@@ -132,6 +143,12 @@ export default function ManageUsers() {
         );
       case "banned":
         return <Badge variant="destructive">Banned</Badge>;
+      case "resolved":
+        return (
+          <Badge className="bg-green-50 text-green-700 border-green-200">
+            Resolved
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -323,7 +340,10 @@ export default function ManageUsers() {
                             size="sm"
                             onClick={() => handleApprove(user.id)}
                             className="bg-green-600 hover:bg-green-700"
-                            disabled={user.status === "active"}
+                            disabled={
+                              user.status === "active" ||
+                              user.status === "resolved"
+                            }
                           >
                             <Check className="h-4 w-4 mr-1" />
                             Approve
@@ -332,10 +352,22 @@ export default function ManageUsers() {
                             size="sm"
                             variant="destructive"
                             onClick={() => handleBan(user.id)}
-                            disabled={user.status === "banned"}
+                            disabled={
+                              user.status === "banned" ||
+                              user.status === "resolved"
+                            }
                           >
                             <UserX className="h-4 w-4 mr-1" />
                             Ban
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleResolve(user.id)}
+                            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                            disabled={user.status === "resolved"}
+                          >
+                            Resolve
                           </Button>
                         </div>
                       </td>
