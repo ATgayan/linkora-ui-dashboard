@@ -203,36 +203,36 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex flex-1 flex-col">
             {/* Desktop Top Navigation */}
-            <header className="sticky top-0 z-30 hidden h-16 items-center gap-4 border-b bg-background px-6 md:flex">
+            <header className="sticky top-0 z-30 hidden h-16 items-center gap-4 border-b bg-background px-6 md:flex bg-black">
               <div className="flex flex-1 items-center gap-4">
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input type="search" placeholder="Search users, collaborations..." className="w-full pl-8" />
+                  <Input type="search" placeholder="Search users, collaborations..." className="w-full pl-8 bg-black" />
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-4 w-4" />
-                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 text-xs text-white flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 text-xs text-white flex items-center justify-center ">
                     3
                   </span>
                   <span className="sr-only">Notifications</span>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2">
+                    <Button variant="ghost" className="flex items-center gap-2" >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src="/placeholder.svg?height=32&width=32" alt="Admin" />
                         <AvatarFallback>AD</AvatarFallback>
                       </Avatar>
-                      <div className="hidden text-left lg:block">
+                      <div className="hidden text-left lg:block" >
                         <p className="text-sm font-medium">Admin User</p>
                         <p className="text-xs text-muted-foreground">{userEmail}</p>
                       </div>
                       <ChevronDown className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-56 bg-black">
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
