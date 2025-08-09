@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo, memo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -84,16 +84,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userEmail, logout } = useAuth();
 
   // Stable original profile data (memoized to prevent recreations)
-  const originalProfile = useMemo(() => ({
-    name: "Admin User",
-    email: userEmail || "admin@linkora.com",
-    role: "System Administrator",
-    department: "IT Department",
-    phone: "+94 77 123 4567",
-    location: "Colombo, Sri Lanka",
-    bio: "Experienced system administrator managing the Linkora platform with expertise in user management and system operations.",
-    joinDate: "January 2024",
-  }), [userEmail]);
+  const originalProfile = useMemo(
+    () => ({
+      name: "Admin User",
+      email: userEmail || "admin@linkora.com",
+      role: "System Administrator",
+      department: "IT Department",
+      phone: "+94 77 123 4567",
+      location: "Colombo, Sri Lanka",
+      bio: "Experienced system administrator managing the Linkora platform with expertise in user management and system operations.",
+      joinDate: "January 2024",
+    }),
+    [userEmail]
+  );
 
   // Current profile state (editable)
   const [profile, setProfile] = useState(originalProfile);
@@ -120,39 +123,241 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     [originalProfile]
   );
 
-  // Debounced change detection to prevent excessive updates
-  const debouncedCheckForChanges = useCallback(
-    (newProfile: typeof profile) => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
+  // Completely stable input component - prevents ALL re-renders during typing
+  const StableInput = memo(
+    ({
+      id,
+      type = "text",
+      value,
+      onChange,
+      placeholder,
+      required = false,
+      disabled = false,
+      className = "",
+    }: {
+      id: string;
+      type?: string;
+      value: string;
+      onChange: (value: string) => void;
+      placeholder: string;
+      required?: boolean;
+      disabled?: boolean;
+      className?: string;
+    }) => {
+      const [localValue, setLocalValue] = useState(value);
+      const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+      const isTypingRef = useRef(false);
 
-      debounceTimerRef.current = setTimeout(() => {
-        checkForChanges(newProfile);
-      }, 150); // Increased debounce time for better stability
+      // Only sync external changes when NOT typing
+      useEffect(() => {
+        if (!isTypingRef.current && value !== localValue) {
+          setLocalValue(value);
+        }
+      }, [value, localValue]);
+
+      const handleChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+          const newValue = e.target.value;
+          isTypingRef.current = true;
+          setLocalValue(newValue);
+
+          // Clear existing timeout
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+          }
+
+          // Debounce the parent update
+          timeoutRef.current = setTimeout(() => {
+            isTypingRef.current = false;
+            onChange(newValue);
+          }, 300); // Increased debounce for better stability
+        },
+        [onChange]
+      );
+
+      const handleFocus = useCallback(() => {
+        isTypingRef.current = true;
+      }, []);
+
+      const handleBlur = useCallback(() => {
+        // Immediate update on blur and stop typing flag
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        isTypingRef.current = false;
+        onChange(localValue);
+      }, [onChange, localValue]);
+
+      useEffect(() => {
+        return () => {
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+          }
+        };
+      }, []);
+
+      return (
+        <Input
+          id={id}
+          type={type}
+          value={localValue}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          placeholder={placeholder}
+          required={required}
+          disabled={disabled}
+          className={className}
+        />
+      );
     },
-    [checkForChanges]
+    // Prevent re-renders by comparing only essential props
+    (prevProps, nextProps) => {
+      return (
+        prevProps.id === nextProps.id &&
+        prevProps.type === nextProps.type &&
+        prevProps.placeholder === nextProps.placeholder &&
+        prevProps.required === nextProps.required &&
+        prevProps.disabled === nextProps.disabled &&
+        prevProps.className === nextProps.className &&
+        prevProps.onChange === nextProps.onChange
+        // Deliberately exclude 'value' to prevent re-renders during typing
+      );
+    }
   );
 
-  // Optimized profile field update - completely stable
+  StableInput.displayName = "StableInput";
+
+  // Stable textarea component
+  const StableTextarea = memo(
+    ({
+      id,
+      value,
+      onChange,
+      placeholder,
+      rows = 4,
+      className = "",
+    }: {
+      id: string;
+      value: string;
+      onChange: (value: string) => void;
+      placeholder: string;
+      rows?: number;
+      className?: string;
+    }) => {
+      const [localValue, setLocalValue] = useState(value);
+      const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+      const isTypingRef = useRef(false);
+
+      // Only sync external changes when NOT typing
+      useEffect(() => {
+        if (!isTypingRef.current && value !== localValue) {
+          setLocalValue(value);
+        }
+      }, [value, localValue]);
+
+      const handleChange = useCallback(
+        (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+          const newValue = e.target.value;
+          isTypingRef.current = true;
+          setLocalValue(newValue);
+
+          // Clear existing timeout
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+          }
+
+          // Debounce the parent update
+          timeoutRef.current = setTimeout(() => {
+            isTypingRef.current = false;
+            onChange(newValue);
+          }, 300); // Increased debounce for better stability
+        },
+        [onChange]
+      );
+
+      const handleFocus = useCallback(() => {
+        isTypingRef.current = true;
+      }, []);
+
+      const handleBlur = useCallback(() => {
+        // Immediate update on blur and stop typing flag
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        isTypingRef.current = false;
+        onChange(localValue);
+      }, [onChange, localValue]);
+
+      useEffect(() => {
+        return () => {
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+          }
+        };
+      }, []);
+
+      return (
+        <Textarea
+          id={id}
+          value={localValue}
+          onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          rows={rows}
+          placeholder={placeholder}
+          className={className}
+        />
+      );
+    },
+    // Prevent re-renders by comparing only essential props
+    (prevProps, nextProps) => {
+      return (
+        prevProps.id === nextProps.id &&
+        prevProps.placeholder === nextProps.placeholder &&
+        prevProps.rows === nextProps.rows &&
+        prevProps.className === nextProps.className &&
+        prevProps.onChange === nextProps.onChange
+        // Deliberately exclude 'value' to prevent re-renders during typing
+      );
+    }
+  );
+
+  StableTextarea.displayName = "StableTextarea";
+
+  // Optimized profile field update with better debouncing
   const updateProfileField = useCallback(
     (field: keyof typeof profile, value: string) => {
       setProfile((prev) => {
         // Only update if value actually changed
         if (prev[field] === value) return prev;
-        
+
         const newProfile = { ...prev, [field]: value };
-        
-        // Use setTimeout instead of requestAnimationFrame for better stability
-        setTimeout(() => {
-          debouncedCheckForChanges(newProfile);
-        }, 0);
-        
+
+        // Clear any existing timeout
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+
+        // Debounce change detection with longer delay for stability
+        debounceTimerRef.current = setTimeout(() => {
+          checkForChanges(newProfile);
+        }, 500); // Increased to 500ms for maximum stability
+
         return newProfile;
       });
     },
-    [debouncedCheckForChanges]
+    [checkForChanges]
   );
+
+  // Create stable callback refs for each field to prevent re-renders
+  const nameChangeCallback = useCallback((value: string) => updateProfileField("name", value), [updateProfileField]);
+  const emailChangeCallback = useCallback((value: string) => updateProfileField("email", value), [updateProfileField]);
+  const roleChangeCallback = useCallback((value: string) => updateProfileField("role", value), [updateProfileField]);
+  const departmentChangeCallback = useCallback((value: string) => updateProfileField("department", value), [updateProfileField]);
+  const phoneChangeCallback = useCallback((value: string) => updateProfileField("phone", value), [updateProfileField]);
+  const locationChangeCallback = useCallback((value: string) => updateProfileField("location", value), [updateProfileField]);
+  const bioChangeCallback = useCallback((value: string) => updateProfileField("bio", value), [updateProfileField]);
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
@@ -196,7 +401,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    
+
     setProfile(originalProfile);
     setHasChanges(false);
     setProfileOpen(false);
@@ -253,7 +458,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="text-lg font-semibold text-white">{profile.name}</h3>
+              <h3 className="text-lg font-semibold text-white">
+                {profile.name}
+              </h3>
               <p className="text-sm text-gray-400">{profile.role}</p>
             </div>
             {hasChanges && (
@@ -278,10 +485,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <Label htmlFor="name" className="text-white">
                   Full Name <span className="text-red-400">*</span>
                 </Label>
-                <Input
+                <StableInput
                   id="name"
                   value={profile.name}
-                  onChange={(e) => updateProfileField("name", e.target.value)}
+                  onChange={nameChangeCallback}
                   placeholder="Enter your full name"
                   required
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
@@ -291,11 +498,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <Label htmlFor="email" className="text-white">
                   Email <span className="text-red-400">*</span>
                 </Label>
-                <Input
+                <StableInput
                   id="email"
                   type="email"
                   value={profile.email}
-                  onChange={(e) => updateProfileField("email", e.target.value)}
+                  onChange={emailChangeCallback}
                   placeholder="Enter your email address"
                   required
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
@@ -305,21 +512,25 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="role" className="text-white">Role</Label>
-                <Input
+                <Label htmlFor="role" className="text-white">
+                  Role
+                </Label>
+                <StableInput
                   id="role"
                   value={profile.role}
-                  onChange={(e) => updateProfileField("role", e.target.value)}
+                  onChange={roleChangeCallback}
                   placeholder="Enter your role"
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="department" className="text-white">Department</Label>
-                <Input
+                <Label htmlFor="department" className="text-white">
+                  Department
+                </Label>
+                <StableInput
                   id="department"
                   value={profile.department}
-                  onChange={(e) => updateProfileField("department", e.target.value)}
+                  onChange={departmentChangeCallback}
                   placeholder="Enter your department"
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
                 />
@@ -328,21 +539,25 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-white">Phone</Label>
-                <Input
+                <Label htmlFor="phone" className="text-white">
+                  Phone
+                </Label>
+                <StableInput
                   id="phone"
                   value={profile.phone}
-                  onChange={(e) => updateProfileField("phone", e.target.value)}
+                  onChange={phoneChangeCallback}
                   placeholder="Enter your phone number"
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="location" className="text-white">Location</Label>
-                <Input
+                <Label htmlFor="location" className="text-white">
+                  Location
+                </Label>
+                <StableInput
                   id="location"
                   value={profile.location}
-                  onChange={(e) => updateProfileField("location", e.target.value)}
+                  onChange={locationChangeCallback}
                   placeholder="Enter your location"
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
                 />
@@ -350,12 +565,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bio" className="text-white">Bio</Label>
-              <Textarea
+              <Label htmlFor="bio" className="text-white">
+                Bio
+              </Label>
+              <StableTextarea
                 id="bio"
                 value={profile.bio}
-                onChange={(e) => updateProfileField("bio", e.target.value)}
-                rows={4}
+                onChange={bioChangeCallback}
                 placeholder="Tell us about yourself..."
                 className="resize-none bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
               />
@@ -365,10 +581,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="joinDate" className="text-white">Member Since</Label>
-              <Input
+              <Label htmlFor="joinDate" className="text-white">
+                Member Since
+              </Label>
+              <StableInput
                 id="joinDate"
                 value={profile.joinDate}
+                onChange={() => {}} // No-op since it's disabled
+                placeholder=""
                 disabled
                 className="bg-gray-900 border-gray-700 text-gray-400 cursor-not-allowed"
               />
@@ -514,7 +734,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                                 : "hover:bg-red-100 hover:text-red-600 hover:shadow-md"
                             }`}
                           >
-                            <Link href={item.href} className="flex items-center gap-3 w-full border-l-4 border-transparent hover:border-red-600 transition-all duration-200">
+                            <Link
+                              href={item.href}
+                              className="flex items-center gap-3 w-full border-l-4 border-transparent hover:border-red-600 transition-all duration-200"
+                            >
                               <Icon className="h-4 w-4" />
                               <span>{item.title}</span>
                             </Link>
@@ -540,7 +763,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="relative hover:bg-gray-800 transition-colors duration-200">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative hover:bg-gray-800 transition-colors duration-200"
+                >
                   <Bell className="h-4 w-4" />
                   <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-xs text-white flex items-center justify-center animate-pulse">
                     3
@@ -549,7 +776,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2 hover:bg-gray-800 transition-colors duration-200">
+                    <Button
+                      variant="ghost"
+                      className="flex items-center gap-2 hover:bg-gray-800 transition-colors duration-200"
+                    >
                       <Avatar className="h-8 w-8 ring-2 ring-transparent hover:ring-gray-600 transition-all duration-200">
                         <AvatarImage src="/placeholder-user.jpg" alt="User" />
                         <AvatarFallback className="bg-gray-700 hover:bg-gray-600 transition-colors duration-200">
@@ -565,18 +795,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       <ChevronDown className="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    align="end" 
+                  <DropdownMenuContent
+                    align="end"
                     className="w-56 bg-black border-gray-700 shadow-2xl animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
                     sideOffset={8}
                   >
-                    <DropdownMenuLabel className="text-white">My Account</DropdownMenuLabel>
+                    <DropdownMenuLabel className="text-white">
+                      My Account
+                    </DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-gray-700" />
                     <DropdownMenuItem className="text-gray-300 hover:bg-gray-800 hover:text-white focus:bg-gray-800 focus:text-white cursor-pointer transition-colors duration-200">
                       <Settings className="mr-2 h-4 w-4" />
                       Settings
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={handleProfileClick}
                       className="text-gray-300 hover:bg-gray-800 hover:text-white focus:bg-gray-800 focus:text-white cursor-pointer transition-colors duration-200"
                     >
