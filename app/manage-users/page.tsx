@@ -58,7 +58,7 @@ export default function ManageUsers() {
   useEffect(() => {
     fetchUsersFromBackend().then((data) => {
       // Add missing fields and normalize status to lowercase
-      const enhanced = data.map((user, index) => ({
+      const enhanced = data.map((user: any, index: number) => ({
         ...user,
         status: user.status ? user.status.toLowerCase() : "pending",
         id: index + 1,
@@ -91,7 +91,6 @@ export default function ManageUsers() {
     toast({
       title: "User Approved",
       description: "The user has been approved and is now active.",
-      status: "success",
     });
   };
 
@@ -104,7 +103,6 @@ export default function ManageUsers() {
     toast({
       title: "User Banned",
       description: "The user has been banned.",
-      status: "error",
     });
   };
 

@@ -1,83 +1,40 @@
-"use client"
-import { BarChart3, Users, Users2, TrendingUp } from "lucide-react"
+"use client";
+import { BarChart3, Users, Users2, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ThemeProvider } from "@/components/theme-provider";
+import { DashboardLayout } from "./dashboard-layout";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ThemeProvider } from "@/components/theme-provider"
-import { DashboardLayout } from "./dashboard-layout"
+const ICON_MAP = { Users, Users2, TrendingUp };
 
-// Mock data for analytics
-const genderData = [
-  { label: "Male", value: 45, color: "bg-blue-500" },
-  { label: "Female", value: 55, color: "bg-green-500" },
-]
-
-const yearData = [
-  { label: "1st Year", value: 35, color: "bg-blue-400" },
-  { label: "2nd Year", value: 28, color: "bg-blue-500" },
-  { label: "3rd Year", value: 22, color: "bg-blue-600" },
-  { label: "4th Year", value: 15, color: "bg-blue-700" },
-]
-
-const topSkills = [
-  { name: "Programming", count: 234, color: "#3b82f6" },
-  { name: "Design", count: 189, color: "#6366f1" },
-  { name: "Writing", count: 156, color: "#8b5cf6" },
-  { name: "Photography", count: 134, color: "#a855f7" },
-  { name: "Music", count: 98, color: "#c084fc" },
-  { name: "Research", count: 87, color: "#d8b4fe" },
-]
-
-const topInterests = [
-  { name: "Technology", count: 298, color: "#10b981" },
-  { name: "Arts", count: 245, color: "#06b6d4" },
-  { name: "Sports", count: 198, color: "#8b5cf6" },
-  { name: "Music", count: 167, color: "#f59e0b" },
-  { name: "Travel", count: 134, color: "#ef4444" },
-  { name: "Gaming", count: 123, color: "#84cc16" },
-]
-
-const recentActivity = [
-  {
-    id: 1,
-    type: "user_joined",
-    message: "New user Alex Johnson joined",
-    time: "2 minutes ago",
-    icon: Users,
-    color: "text-green-600",
-  },
-  {
-    id: 2,
-    type: "collaboration_created",
-    message: "New collaboration 'Mobile App Project' created",
-    time: "15 minutes ago",
-    icon: Users2,
-    color: "text-blue-600",
-  },
-  {
-    id: 3,
-    type: "report_submitted",
-    message: "User reported for inappropriate content",
-    time: "1 hour ago",
-    icon: TrendingUp,
-    color: "text-red-600",
-  },
-  {
-    id: 4,
-    type: "user_approved",
-    message: "User Maya Patel approved by admin",
-    time: "2 hours ago",
-    icon: Users,
-    color: "text-green-600",
-  },
-]
+type GenderData = { label: string; value: number; color: string }[];
+type YearData = { label: string; value: number; color: string }[];
+type SkillData = { name: string; count: number; color: string }[];
+type InterestData = { name: string; count: number; color: string }[];
+type ActivityData = {
+  id: number;
+  type: string;
+  message: string;
+  time: string;
+  icon: string;
+  color: string;
+}[];
 
 // Bar Chart Component
-const BarChart = ({ data }: { data: typeof topSkills }) => {
-  const maxCount = Math.max(...data.map((item) => item.count))
+const BarChart = ({ data }: { data: SkillData }) => {
+  const maxCount = Math.max(
+    ...data.map((item: SkillData[number]) => item.count)
+  );
 
   return (
     <div className="space-y-3">
-      {data.map((item) => (
+      {data.map((item: SkillData[number]) => (
         <div key={item.name} className="flex items-center gap-3">
           <div className="w-20 text-sm font-medium text-right">{item.name}</div>
           <div className="flex-1 flex items-center gap-2">
@@ -89,60 +46,86 @@ const BarChart = ({ data }: { data: typeof topSkills }) => {
                   backgroundColor: item.color,
                 }}
               >
-                <span className="text-white text-xs font-medium">{item.count}</span>
+                <span className="text-white text-xs font-medium">
+                  {item.count}
+                </span>
               </div>
             </div>
           </div>
         </div>
       ))}
     </div>
-  )
-}
+  );
+};
 
 // Pie Chart Component
-const PieChart = ({ data }: { data: typeof topInterests }) => {
-  const total = data.reduce((sum, item) => sum + item.count, 0)
-  let cumulativePercentage = 0
+const PieChart = ({ data }: { data: InterestData }) => {
+  const total = data.reduce(
+    (sum: number, item: InterestData[number]) => sum + item.count,
+    0
+  );
+  let cumulativePercentage = 0;
 
-  const segments = data.map((item) => {
-    const percentage = (item.count / total) * 100
-    const startAngle = cumulativePercentage * 3.6 // Convert to degrees
-    cumulativePercentage += percentage
+  const segments = data.map((item: InterestData[number]) => {
+    const percentage = (item.count / total) * 100;
+    const startAngle = cumulativePercentage * 3.6; // Convert to degrees
+    cumulativePercentage += percentage;
     return {
       ...item,
       percentage,
       startAngle,
       endAngle: cumulativePercentage * 3.6,
-    }
-  })
+    };
+  });
 
   return (
     <div className="flex items-center gap-6">
       <div className="relative">
-        <svg width="200" height="200" viewBox="0 0 200 200" className="transform -rotate-90">
+        <svg
+          width="200"
+          height="200"
+          viewBox="0 0 200 200"
+          className="transform -rotate-90"
+        >
           <circle cx="100" cy="100" r="80" fill="transparent" />
-          {segments.map((segment, index) => {
-            const { startAngle, endAngle, color } = segment
-            const startAngleRad = (startAngle * Math.PI) / 180
-            const endAngleRad = (endAngle * Math.PI) / 180
+          {segments.map((segment: (typeof segments)[number], index: number) => {
+            const { startAngle, endAngle, color } = segment;
+            const startAngleRad = (startAngle * Math.PI) / 180;
+            const endAngleRad = (endAngle * Math.PI) / 180;
 
-            const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0
+            const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
 
-            const x1 = 100 + 80 * Math.cos(startAngleRad)
-            const y1 = 100 + 80 * Math.sin(startAngleRad)
-            const x2 = 100 + 80 * Math.cos(endAngleRad)
-            const y2 = 100 + 80 * Math.sin(endAngleRad)
+            const x1 = 100 + 80 * Math.cos(startAngleRad);
+            const y1 = 100 + 80 * Math.sin(startAngleRad);
+            const x2 = 100 + 80 * Math.cos(endAngleRad);
+            const y2 = 100 + 80 * Math.sin(endAngleRad);
 
-            const pathData = [`M 100 100`, `L ${x1} ${y1}`, `A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2}`, `Z`].join(" ")
+            const pathData = [
+              `M 100 100`,
+              `L ${x1} ${y1}`,
+              `A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+              `Z`,
+            ].join(" ");
 
-            return <path key={index} d={pathData} fill={color} stroke="white" strokeWidth="2" />
+            return (
+              <path
+                key={index}
+                d={pathData}
+                fill={color}
+                stroke="white"
+                strokeWidth="2"
+              />
+            );
           })}
         </svg>
       </div>
       <div className="space-y-2">
-        {segments.map((segment) => (
+        {segments.map((segment: (typeof segments)[number]) => (
           <div key={segment.name} className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: segment.color }} />
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: segment.color }}
+            />
             <span className="text-sm font-medium">{segment.name}</span>
             <span className="text-sm text-muted-foreground">
               {segment.count} ({segment.percentage.toFixed(1)}%)
@@ -151,24 +134,169 @@ const PieChart = ({ data }: { data: typeof topInterests }) => {
         ))}
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default function Dashboard() {
+  // State variables
+  const [genderData, setGenderData] = useState<GenderData>([]);
+  const [yearData, setYearData] = useState<YearData>([]);
+  const [topSkills, setTopSkills] = useState<SkillData>([]);
+  const [topInterests, setTopInterests] = useState<InterestData>([]);
+  const [recentActivity, setRecentActivity] = useState<ActivityData>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:3007/api/dashboard/gender")
+      .then((res) => res.json())
+      .then(setGenderData);
+    fetch("http://localhost:3007/api/dashboard/year")
+      .then((res) => res.json())
+      .then(setYearData);
+    fetch("http://localhost:3007/api/dashboard/skills")
+      .then((res) => res.json())
+      .then(setTopSkills);
+    fetch("http://localhost:3007/api/dashboard/interests")
+      .then((res) => res.json())
+      .then(setTopInterests);
+    fetch("http://localhost:3007/api/dashboard/activity")
+      .then((res) => res.json())
+      .then(setRecentActivity);
+  }, []);
+
+  // Bar Chart Component
+  const BarChart = ({ data }: { data: SkillData }) => {
+    const maxCount = Math.max(
+      ...data.map((item: { count: number }) => item.count)
+    );
+
+    return (
+      <div className="space-y-3">
+        {data.map((item: { name: string; count: number; color: string }) => (
+          <div key={item.name} className="flex items-center gap-3">
+            <div className="w-20 text-sm font-medium text-right">
+              {item.name}
+            </div>
+            <div className="flex-1 flex items-center gap-2">
+              <div className="flex-1 bg-muted rounded-full h-6 relative overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                  style={{
+                    width: `${(item.count / maxCount) * 100}%`,
+                    backgroundColor: item.color,
+                  }}
+                >
+                  <span className="text-white text-xs font-medium">
+                    {item.count}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Pie Chart Component
+  const PieChart = ({ data }: { data: InterestData }) => {
+    const total = data.reduce(
+      (sum: number, item: { count: number }) => sum + item.count,
+      0
+    );
+    let cumulativePercentage = 0;
+
+    const segments = data.map(
+      (item: { name: string; count: number; color: string }) => {
+        const percentage = (item.count / total) * 100;
+        const startAngle = cumulativePercentage * 3.6; // Convert to degrees
+        cumulativePercentage += percentage;
+        return {
+          ...item,
+          percentage,
+          startAngle,
+          endAngle: cumulativePercentage * 3.6,
+        };
+      }
+    );
+
+    return (
+      <div className="flex items-center gap-6">
+        <div className="relative">
+          <svg
+            width="200"
+            height="200"
+            viewBox="0 0 200 200"
+            className="transform -rotate-90"
+          >
+            <circle cx="100" cy="100" r="80" fill="transparent" />
+            {segments.map((segment: any, index: number) => {
+              const { startAngle, endAngle, color } = segment;
+              const startAngleRad = (startAngle * Math.PI) / 180;
+              const endAngleRad = (endAngle * Math.PI) / 180;
+
+              const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+
+              const x1 = 100 + 80 * Math.cos(startAngleRad);
+              const y1 = 100 + 80 * Math.sin(startAngleRad);
+              const x2 = 100 + 80 * Math.cos(endAngleRad);
+              const y2 = 100 + 80 * Math.sin(endAngleRad);
+
+              const pathData = [
+                `M 100 100`,
+                `L ${x1} ${y1}`,
+                `A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                `Z`,
+              ].join(" ");
+
+              return (
+                <path
+                  key={index}
+                  d={pathData}
+                  fill={color}
+                  stroke="white"
+                  strokeWidth="2"
+                />
+              );
+            })}
+          </svg>
+        </div>
+        <div className="space-y-2">
+          {segments.map((segment: any) => (
+            <div key={segment.name} className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: segment.color }}
+              />
+              <span className="text-sm font-medium">{segment.name}</span>
+              <span className="text-sm text-muted-foreground">
+                {segment.count} ({segment.percentage.toFixed(1)}%)
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <DashboardLayout>
         <div className="flex flex-col gap-6 p-4 md:p-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-            <p className="text-muted-foreground">Welcome back! Here's what's happening on your platform.</p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Dashboard Overview
+            </h1>
+            <p className="text-muted-foreground">
+              Welcome back! Here's what's happening on your platform.
+            </p>
           </div>
 
           {/* Summary Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Users
+                </CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -214,7 +342,6 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">User registration rate</p>
               </CardContent>
             </Card>*/}
-            
           </div>
 
           {/* Charts Section */}
@@ -226,22 +353,52 @@ export default function Dashboard() {
                 <CardDescription>User demographics breakdown</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {genderData.map((item) => (
-                    <div key={item.label} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded ${item.color}`} />
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-32 bg-muted rounded-full h-2">
-                          <div className={`h-2 rounded-full ${item.color}`} style={{ width: `${item.value}%` }} />
-                        </div>
-                        <span className="text-sm text-muted-foreground w-10">{item.value}%</span>
-                      </div>
+                {(() => {
+                  const total = genderData.reduce(
+                    (sum, item) => sum + item.value,
+                    0
+                  );
+                  const max = Math.max(
+                    ...genderData.map((item) => item.value),
+                    1
+                  );
+                  return (
+                    <div className="space-y-4">
+                      {genderData.map((item) => {
+                        const percent = total
+                          ? ((item.value / total) * 100).toFixed(1)
+                          : 0;
+                        const barWidth = ((item.value / max) * 100).toFixed(1);
+                        return (
+                          <div
+                            key={item.label}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-4 h-4 rounded ${item.color}`}
+                              />
+                              <span className="text-sm font-medium">
+                                {item.label}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-32 bg-muted rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full ${item.color}`}
+                                  style={{ width: `${barWidth}%` }}
+                                />
+                              </div>
+                              <span className="text-sm text-muted-foreground w-10">
+                                {percent}%
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
+                  );
+                })()}
               </CardContent>
             </Card>
 
@@ -252,25 +409,52 @@ export default function Dashboard() {
                 <CardDescription>Students by academic year</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {yearData.map((item) => (
-                    <div key={item.label} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded ${item.color}`} />
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-32 bg-muted rounded-full h-2">
+                {(() => {
+                  const total = yearData.reduce(
+                    (sum, item) => sum + item.value,
+                    0
+                  );
+                  const max = Math.max(
+                    ...yearData.map((item) => item.value),
+                    1
+                  );
+                  return (
+                    <div className="space-y-4">
+                      {yearData.map((item) => {
+                        const percent = total
+                          ? ((item.value / total) * 100).toFixed(1)
+                          : 0;
+                        const barWidth = ((item.value / max) * 100).toFixed(1);
+                        return (
                           <div
-                            className={`h-2 rounded-full ${item.color}`}
-                            style={{ width: `${(item.value / 35) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm text-muted-foreground w-10">{item.value}%</span>
-                      </div>
+                            key={item.label}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-4 h-4 rounded ${item.color}`}
+                              />
+                              <span className="text-sm font-medium">
+                                {item.label}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-32 bg-muted rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full ${item.color}`}
+                                  style={{ width: `${barWidth}%` }}
+                                />
+                              </div>
+                              <span className="text-sm text-muted-foreground w-10">
+                                {percent}%
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>
@@ -304,23 +488,35 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest platform activities and updates</CardDescription>
+              <CardDescription>
+                Latest platform activities and updates
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {recentActivity.map((activity) => {
-                  const Icon = activity.icon
+                  const IconComponent =
+                    ICON_MAP[activity.icon as keyof typeof ICON_MAP] || Users;
                   return (
-                    <div key={activity.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50">
-                      <div className={`p-2 rounded-full bg-muted ${activity.color}`}>
-                        <Icon className="h-4 w-4" />
+                    <div
+                      key={activity.id}
+                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50"
+                    >
+                      <div
+                        className={`p-2 rounded-full bg-muted ${activity.color}`}
+                      >
+                        <IconComponent className="h-4 w-4" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">{activity.message}</p>
-                        <p className="text-xs text-muted-foreground">{activity.time}</p>
+                        <p className="text-sm font-medium">
+                          {activity.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {activity.time}
+                        </p>
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </CardContent>
@@ -328,5 +524,5 @@ export default function Dashboard() {
         </div>
       </DashboardLayout>
     </ThemeProvider>
-  )
+  );
 }
