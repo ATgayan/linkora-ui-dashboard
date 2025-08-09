@@ -26,34 +26,58 @@ type ActivityData = {
   color: string;
 }[];
 
-// Bar Chart Component
-const BarChart = ({ data }: { data: SkillData }) => {
-  const maxCount = Math.max(
-    ...data.map((item: SkillData[number]) => item.count)
-  );
+// Percentage Bar Component
+const PercentageBar = ({ data }: { data: GenderData | YearData }) => {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  const maxValue = Math.max(...data.map((item) => item.value));
 
   return (
     <div className="space-y-3">
-      {data.map((item: SkillData[number]) => (
-        <div key={item.name} className="flex items-center gap-3">
-          <div className="w-20 text-sm font-medium text-right">{item.name}</div>
-          <div className="flex-1 flex items-center gap-2">
-            <div className="flex-1 bg-muted rounded-full h-6 relative overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                style={{
-                  width: `${(item.count / maxCount) * 100}%`,
-                  backgroundColor: item.color,
-                }}
-              >
-                <span className="text-white text-xs font-medium">
-                  {item.count}
-                </span>
+      {data.map((item) => {
+        const percentage = total ? ((item.value / total) * 100).toFixed(1) : 0;
+        const barWidth = ((item.value / maxValue) * 100).toFixed(1);
+
+        return (
+          <div key={item.label} className="flex items-center gap-3">
+            <div className="w-20 text-sm font-medium text-right">
+              {item.label}
+            </div>
+            <div className="flex-1 flex items-center gap-2">
+              <div className="flex-1 bg-muted rounded-full h-6 relative overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500 flex items-center justify-between px-2"
+                  style={{
+                    width: `${barWidth}%`,
+                    backgroundColor: item.color
+                      .replace("bg-", "")
+                      .replace("-500", ""),
+                    background: item.color.includes("blue")
+                      ? "#3b82f6"
+                      : item.color.includes("pink")
+                      ? "#ec4899"
+                      : item.color.includes("purple")
+                      ? "#8b5cf6"
+                      : item.color.includes("green")
+                      ? "#10b981"
+                      : item.color.includes("orange")
+                      ? "#f59e0b"
+                      : item.color.includes("red")
+                      ? "#ef4444"
+                      : "#6b7280",
+                  }}
+                >
+                  <span className="text-white text-xs font-medium">
+                    {item.value}
+                  </span>
+                  <span className="text-white text-xs font-medium">
+                    {percentage}%
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
@@ -166,12 +190,12 @@ export default function Dashboard() {
   // Bar Chart Component
   const BarChart = ({ data }: { data: SkillData }) => {
     const maxCount = Math.max(
-      ...data.map((item: { count: number }) => item.count)
+      ...data.map((item: SkillData[number]) => item.count)
     );
 
     return (
       <div className="space-y-3">
-        {data.map((item: { name: string; count: number; color: string }) => (
+        {data.map((item: SkillData[number]) => (
           <div key={item.name} className="flex items-center gap-3">
             <div className="w-20 text-sm font-medium text-right">
               {item.name}
@@ -200,24 +224,22 @@ export default function Dashboard() {
   // Pie Chart Component
   const PieChart = ({ data }: { data: InterestData }) => {
     const total = data.reduce(
-      (sum: number, item: { count: number }) => sum + item.count,
+      (sum: number, item: InterestData[number]) => sum + item.count,
       0
     );
     let cumulativePercentage = 0;
 
-    const segments = data.map(
-      (item: { name: string; count: number; color: string }) => {
-        const percentage = (item.count / total) * 100;
-        const startAngle = cumulativePercentage * 3.6; // Convert to degrees
-        cumulativePercentage += percentage;
-        return {
-          ...item,
-          percentage,
-          startAngle,
-          endAngle: cumulativePercentage * 3.6,
-        };
-      }
-    );
+    const segments = data.map((item: InterestData[number]) => {
+      const percentage = (item.count / total) * 100;
+      const startAngle = cumulativePercentage * 3.6; // Convert to degrees
+      cumulativePercentage += percentage;
+      return {
+        ...item,
+        percentage,
+        startAngle,
+        endAngle: cumulativePercentage * 3.6,
+      };
+    });
 
     return (
       <div className="flex items-center gap-6">
@@ -229,39 +251,41 @@ export default function Dashboard() {
             className="transform -rotate-90"
           >
             <circle cx="100" cy="100" r="80" fill="transparent" />
-            {segments.map((segment: any, index: number) => {
-              const { startAngle, endAngle, color } = segment;
-              const startAngleRad = (startAngle * Math.PI) / 180;
-              const endAngleRad = (endAngle * Math.PI) / 180;
+            {segments.map(
+              (segment: (typeof segments)[number], index: number) => {
+                const { startAngle, endAngle, color } = segment;
+                const startAngleRad = (startAngle * Math.PI) / 180;
+                const endAngleRad = (endAngle * Math.PI) / 180;
 
-              const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+                const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
 
-              const x1 = 100 + 80 * Math.cos(startAngleRad);
-              const y1 = 100 + 80 * Math.sin(startAngleRad);
-              const x2 = 100 + 80 * Math.cos(endAngleRad);
-              const y2 = 100 + 80 * Math.sin(endAngleRad);
+                const x1 = 100 + 80 * Math.cos(startAngleRad);
+                const y1 = 100 + 80 * Math.sin(startAngleRad);
+                const x2 = 100 + 80 * Math.cos(endAngleRad);
+                const y2 = 100 + 80 * Math.sin(endAngleRad);
 
-              const pathData = [
-                `M 100 100`,
-                `L ${x1} ${y1}`,
-                `A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-                `Z`,
-              ].join(" ");
+                const pathData = [
+                  `M 100 100`,
+                  `L ${x1} ${y1}`,
+                  `A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                  `Z`,
+                ].join(" ");
 
-              return (
-                <path
-                  key={index}
-                  d={pathData}
-                  fill={color}
-                  stroke="white"
-                  strokeWidth="2"
-                />
-              );
-            })}
+                return (
+                  <path
+                    key={index}
+                    d={pathData}
+                    fill={color}
+                    stroke="white"
+                    strokeWidth="2"
+                  />
+                );
+              }
+            )}
           </svg>
         </div>
         <div className="space-y-2">
-          {segments.map((segment: any) => (
+          {segments.map((segment: (typeof segments)[number]) => (
             <div key={segment.name} className="flex items-center gap-2">
               <div
                 className="w-3 h-3 rounded-full"
@@ -353,52 +377,7 @@ export default function Dashboard() {
                 <CardDescription>User demographics breakdown</CardDescription>
               </CardHeader>
               <CardContent>
-                {(() => {
-                  const total = genderData.reduce(
-                    (sum, item) => sum + item.value,
-                    0
-                  );
-                  const max = Math.max(
-                    ...genderData.map((item) => item.value),
-                    1
-                  );
-                  return (
-                    <div className="space-y-4">
-                      {genderData.map((item) => {
-                        const percent = total
-                          ? ((item.value / total) * 100).toFixed(1)
-                          : 0;
-                        const barWidth = ((item.value / max) * 100).toFixed(1);
-                        return (
-                          <div
-                            key={item.label}
-                            className="flex items-center justify-between"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div
-                                className={`w-4 h-4 rounded ${item.color}`}
-                              />
-                              <span className="text-sm font-medium">
-                                {item.label}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-32 bg-muted rounded-full h-2">
-                                <div
-                                  className={`h-2 rounded-full ${item.color}`}
-                                  style={{ width: `${barWidth}%` }}
-                                />
-                              </div>
-                              <span className="text-sm text-muted-foreground w-10">
-                                {percent}%
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
+                <PercentageBar data={genderData} />
               </CardContent>
             </Card>
 
@@ -409,52 +388,7 @@ export default function Dashboard() {
                 <CardDescription>Students by academic year</CardDescription>
               </CardHeader>
               <CardContent>
-                {(() => {
-                  const total = yearData.reduce(
-                    (sum, item) => sum + item.value,
-                    0
-                  );
-                  const max = Math.max(
-                    ...yearData.map((item) => item.value),
-                    1
-                  );
-                  return (
-                    <div className="space-y-4">
-                      {yearData.map((item) => {
-                        const percent = total
-                          ? ((item.value / total) * 100).toFixed(1)
-                          : 0;
-                        const barWidth = ((item.value / max) * 100).toFixed(1);
-                        return (
-                          <div
-                            key={item.label}
-                            className="flex items-center justify-between"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div
-                                className={`w-4 h-4 rounded ${item.color}`}
-                              />
-                              <span className="text-sm font-medium">
-                                {item.label}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-32 bg-muted rounded-full h-2">
-                                <div
-                                  className={`h-2 rounded-full ${item.color}`}
-                                  style={{ width: `${barWidth}%` }}
-                                />
-                              </div>
-                              <span className="text-sm text-muted-foreground w-10">
-                                {percent}%
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
+                <PercentageBar data={yearData} />
               </CardContent>
             </Card>
           </div>
