@@ -360,15 +360,6 @@ export default function ManageUsers() {
                             <UserX className="h-4 w-4 mr-1" />
                             Ban
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleResolve(user.id)}
-                            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-                            disabled={user.status === "resolved"}
-                          >
-                            Resolve
-                          </Button>
                         </div>
                       </td>
                     </tr>
