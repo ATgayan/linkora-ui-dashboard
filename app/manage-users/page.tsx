@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, UserX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -33,8 +34,21 @@ import { DashboardLayout } from "../dashboard-layout";
 // 👇 import your fetch function (make sure path is correct)
 import { fetchUsersFromBackend } from "@/lib/fetchUsers"; // 👈
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/lib/useAuth";
 
 export default function ManageUsers() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [loading, user, router]);
+
+  // Show loading while checking authentication
+  if (loading || !user) return null;
   const handleResolve = (userId: number) => {
     setUsers((prev) =>
       prev.map((user) =>

@@ -69,17 +69,17 @@ interface AdminProfile {
 const navigationItems = [
   {
     title: "Dashboard",
-    href: "/admin", // Changed from "/" to "/admin"
+    href: "/dashboard", // Fixed: changed to /dashboard
     icon: LayoutDashboard,
   },
   {
     title: "Manage Users",
-    href: "/admin/manage-users", // Added /admin prefix
+    href: "/manage-users", // Fixed: removed /admin prefix
     icon: Users,
   },
   {
     title: "Reports",
-    href: "/admin/reports", // Added /admin prefix
+    href: "/reports", // Fixed: removed /admin prefix
     icon: Flag,
   },
 ];
@@ -590,7 +590,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <div className="flex h-full flex-col">
               <div className="flex h-16 items-center border-b px-6">
                 <Link
-                  href="/admin"
+                  href="/dashboard"
                   className="flex items-center gap-2 font-semibold"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -639,7 +639,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {/* Desktop Sidebar */}
           <Sidebar className="hidden border-r md:flex">
             <SidebarHeader className="border-b p-6">
-              <Link href="/admin" className="flex items-center gap-2 font-semibold">
+              <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <BarChart3 className="h-4 w-4" />
                 </div>

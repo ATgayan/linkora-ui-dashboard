@@ -9,16 +9,16 @@ export function middleware(request) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // If trying to visit login page and a valid session exists → go to admin
+  // If trying to visit login page and a valid session exists → go to dashboard
   // (for now, we just check existence, but you can verify it)
   if (pathname === '/login' && session) {
-    return NextResponse.redirect(new URL('/admin', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/login'],
+  matcher: ['/admin/:path*'],
 };
 // This middleware checks if the user is authenticated before allowing access to admin routes.

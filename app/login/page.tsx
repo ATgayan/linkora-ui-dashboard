@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ThemeProvider } from "@/components/theme-provider"
+import { useAuth } from "@/lib/useAuth"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -21,29 +22,21 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
   const router = useRouter()
+  const { login, error, clearError } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError("")
+    clearError()
 
-    // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Simple validation for demo
-      if (email === "admin@linkora.edu" && password === "admin123") {
-        // Store auth state in localStorage for demo
-        localStorage.setItem("isAuthenticated", "true")
-        localStorage.setItem("userEmail", email)
-        router.push("/")
-      } else {
-        setError("Invalid email or password. Use admin@linkora.edu / admin123")
-      }
+      await login(email, password)
+      // On successful login, redirect to dashboard
+      router.push("/dashboard")
     } catch (err) {
-      setError("An error occurred. Please try again.")
+      console.error("Login failed:", err)
+      // Error is handled by the useAuth hook
     } finally {
       setIsLoading(false)
     }
@@ -160,7 +153,7 @@ export default function LoginPage() {
                 </form>
 
                 <div className="mt-6 text-center">
-                  <p className="text-sm text-muted-foreground">Demo credentials: Admin@gmail.com / Admin1234</p>
+                  <p className="text-sm text-muted-foreground">Use your Firebase credentials to sign in</p>
                 </div>
               </CardContent>
             </Card>

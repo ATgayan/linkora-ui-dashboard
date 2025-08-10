@@ -169,8 +169,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (user) {
           await refreshUserToken(user);
         } else {
-          // User signed out - redirect to auth page
-          router.push('/auth');
+          // User signed out - redirect to login page
+          router.push('/login');
         }
       } catch (error) {
         console.error("Auth state change error:", error);

@@ -1,5 +1,6 @@
 ﻿"use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ import {
 import { ThemeProvider } from "@/components/theme-provider";
 import { DashboardLayout } from "../dashboard-layout";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/useAuth";
 import {
   Pagination,
   PaginationContent,
@@ -42,11 +44,24 @@ const fetchReportedUsers = async (): Promise<ReportedUser[]> => {
 };
 
 export default function Reports() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  
   const [reports, setReports] = useState<ReportedUser[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [loading, user, router]);
+
+  // Show loading while checking authentication
+  if (loading || !user) return null;
 
   // Load reports once when the component mounts
   useEffect(() => {

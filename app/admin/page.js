@@ -163,16 +163,17 @@ const PieChart = ({ data }) => {
 };
 
 export default function AdminPage() {
-  const { user, loading } = useAuth();
   const router = useRouter();
+  const { user, loading } = useAuth();
 
-  // Only redirect in useEffect, not during render
+  // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [loading, user, router]);
 
+  // Show loading while checking authentication
   if (loading || !user) return null;
 
   return (
@@ -180,7 +181,7 @@ export default function AdminPage() {
       <DashboardLayout>
         <div className="flex flex-col gap-6 p-4 md:p-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
             <p className="text-muted-foreground">
               Welcome back, {user?.email}! Here&apos;s what&apos;s happening on your platform.
             </p>
