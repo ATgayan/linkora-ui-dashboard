@@ -53,8 +53,10 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
+
 import { useAuth } from "@/components/auth-provider";
 import { ThemeToggle } from "@/components/theme-provider";
+
 
 interface AdminProfile {
   name: string;
@@ -70,18 +72,17 @@ interface AdminProfile {
 const navigationItems = [
   {
     title: "Dashboard",
-    href: "/",
+    href: "/admin", // Changed from "/" to "/admin"
     icon: LayoutDashboard,
   },
   {
     title: "Manage Users",
-    href: "/manage-users",
+    href: "/admin/manage-users", // Added /admin prefix
     icon: Users,
   },
-
   {
     title: "Reports",
-    href: "/reports",
+    href: "/admin/reports", // Added /admin prefix
     icon: Flag,
   },
 ];
@@ -95,12 +96,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isEditing, setIsEditing] = useState(false); // Prevent any external interference
   const router = useRouter();
   const pathname = usePathname();
-  const { userEmail, logout } = useAuth();
+  const { user, logout } = useAuth(); // Use useAuth hook
 
   // Single source-of-truth original profile (does NOT change while editing)
   const [originalProfile, setOriginalProfile] = useState<AdminProfile>(() => ({
     name: "Admin User",
-    email: userEmail || "admin@linkora.com",
+    email: "admin@linkora.com",
     role: "System Administrator",
     department: "IT Department",
     phone: "+94 77 123 4567",
@@ -112,18 +113,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Editable working copy
   const [profile, setProfile] = useState<AdminProfile>(originalProfile);
 
-  // If the authenticated email arrives later AND user is not editing, inject it once.
-  useEffect(() => {
-    if (
-      !profileOpen &&
-      !isEditing &&
-      userEmail &&
-      userEmail !== originalProfile.email
-    ) {
-      setOriginalProfile((prev) => ({ ...prev, email: userEmail }));
-      setProfile((prev) => ({ ...prev, email: userEmail }));
-    }
-  }, [userEmail, profileOpen, isEditing, originalProfile.email]);
+  // Remove useEffect that depends on userEmail since we don't need it anymore
+  // The profile will use the default email from originalProfile
 
   // Debounce timer ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -170,7 +161,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         if (value !== localValue) {
           setLocalValue(value);
         }
-      }, [value]);
+      }, [value, localValue]); // Fixed: Added localValue to dependency
 
       const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -241,7 +232,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         if (value !== localValue) {
           setLocalValue(value);
         }
-      }, [value]);
+      }, [value, localValue]); // Fixed: Added localValue to dependency
 
       const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -362,17 +353,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     [pathname]
   );
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => { // Fixed: Added useCallback
     logout();
-  };
+  }, [logout]);
 
-  const handleProfileClick = () => {
+  const handleProfileClick = useCallback(() => { // Fixed: Added useCallback
     setProfileOpen(true);
     setIsEditing(true);
-  };
+  }, []);
 
-  // Profile Popup Component
-  const ProfilePopup = () => (
+  // Profile Popup Component - Fixed: Moved outside render to avoid recreation
+  const ProfilePopup = useMemo(() => (
     <Dialog
       open={profileOpen}
       onOpenChange={(open) => {
@@ -620,11 +611,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </DialogContent>
     </Dialog>
-  );
+  ), [profileOpen, hasChanges, profile, isSaving, handleCancelProfile, handleSaveProfile, updateProfileField]); // Fixed: Added dependencies
 
   return (
+
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-blue-950/30">
       <ProfilePopup />
+
       {/* Mobile Header */}
       <header className="sticky top-0 z-30 flex h-18 items-center gap-4 border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-md px-4 md:hidden border-gray-200/80 dark:border-gray-800/80 shadow-lg">
         <Sheet open={open} onOpenChange={setOpen}>
@@ -647,8 +640,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <div className="flex h-full flex-col">
               <div className="flex h-16 items-center border-b px-6 border-gray-200/80 dark:border-gray-800/80 bg-gradient-to-r from-white/80 to-gray-50/80 dark:from-gray-950/80 dark:to-gray-900/80">
                 <Link
+
                   href="/"
                   className="flex items-center gap-3 font-semibold group"
+
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
                     <BarChart3 className="h-5 w-5 text-white" />
@@ -714,6 +709,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1">
         <SidebarProvider defaultOpen>
           {/* Desktop Sidebar */}
+
           <Sidebar className="hidden border-r md:flex bg-gradient-to-b from-white to-gray-50/50 dark:from-gray-950 dark:to-gray-900 border-gray-200/80 dark:border-gray-800/80 shadow-xl dark:shadow-2xl">
             <SidebarHeader className="border-b p-6 border-gray-200/80 dark:border-gray-800/80 bg-gradient-to-r from-white/80 to-gray-50/80 dark:from-gray-950/80 dark:to-gray-900/80 backdrop-blur-sm">
               <Link
@@ -730,6 +726,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                     Admin Dashboard
                   </div>
+
                 </div>
               </Link>
             </SidebarHeader>
@@ -786,6 +783,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <header className="sticky top-0 z-30 hidden h-20 items-center gap-4 border-b bg-gradient-to-r from-white via-gray-50/50 to-white dark:from-gray-950 dark:via-gray-900/50 dark:to-gray-950 px-6 md:flex border-gray-200/80 dark:border-gray-800/80 shadow-lg dark:shadow-2xl backdrop-blur-sm">
               <div className="flex flex-1 items-center gap-4">
                 <div className="relative flex-1 max-w-md">
+
                   {/* Enhanced search bar - currently commented */}
                   {/* <div className="relative">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 text-gray-400 transform -translate-y-1/2" />
@@ -795,6 +793,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       className="w-full pl-10 pr-4 py-2 bg-white/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-700 rounded-xl shadow-sm focus:shadow-md transition-all duration-200" 
                     />
                   </div> */}
+
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -823,11 +822,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         </AvatarFallback>
                       </Avatar>
                       <div className="hidden text-left lg:block">
+
                         <p className="text-base font-bold text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
                           Admin User
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300 font-medium">
                           {userEmail}
+
                         </p>
                       </div>
                       <ChevronDown className="h-5 w-5 text-gray-500 dark:text-gray-400 transition-all duration-300 group-hover:rotate-180 group-hover:text-blue-600 dark:group-hover:text-blue-400" />

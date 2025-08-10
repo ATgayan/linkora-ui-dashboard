@@ -7,6 +7,7 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { toast } from "@/components/ui/use-toast";
 
+
 import { Button } from "@/components/ui/button";
 import {
   ThemeProvider as NextThemesProvider,
@@ -16,6 +17,7 @@ import {
 interface ThemeProviderProps extends NextThemeProviderProps {
   children: React.ReactNode;
 }
+
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return <NextThemesProvider {...props}>{children}</NextThemesProvider>;

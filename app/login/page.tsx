@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import type React from "react"
 
@@ -66,112 +66,120 @@ export default function LoginPage() {
             <p className="text-muted-foreground mt-2">Sign in to your admin dashboard</p>
           </div>
 
-          {/* Login Form */}
-          <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80">
-            <CardHeader className="space-y-1 pb-4">
-              <CardTitle className="text-2xl font-semibold text-center">Welcome back</CardTitle>
-              <CardDescription className="text-center">
-                Enter your credentials to access the admin panel
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
+            {/* Login Form */}
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80">
+              <CardHeader className="space-y-1 pb-4">
+                <CardTitle className="text-2xl font-semibold text-center">Welcome back</CardTitle>
+                <CardDescription className="text-center">
+                  Enter your credentials to access the admin panel
+                </CardDescription>
+              </CardHeader>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="admin@linkora.edu"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
-                      required
-                    />
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4" aria-describedby={error ? "login-error" : undefined}>
+                  {error && (
+                    <Alert variant="destructive" id="login-error">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="admin@linkora.edu"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10"
+                        required
+                        autoComplete="email"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 pr-10"
+                        required
+                        autoComplete="current-password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword((s) => !s)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="remember"
-                      checked={rememberMe}
-                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                    />
-                    <Label htmlFor="remember" className="text-sm font-normal">
-                      Remember me
-                    </Label>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="remember"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
+                      />
+                      <Label htmlFor="remember" className="text-sm font-normal">
+                        Remember me
+                      </Label>
+                    </div>
+                    <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                      Forgot password?
+                    </Link>
                   </div>
-                  <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                    Forgot password?
-                  </Link>
+
+                  <Button
+                    type="submit"
+                    className="rounded-xl w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
+                    disabled={isLoading}
+                    aria-busy={isLoading}
+                  >
+                    {isLoading ? "Signing in..." : "Sign in"}
+                  </Button>
+                </form>
+
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-muted-foreground">Demo credentials: Admin@gmail.com / Admin1234</p>
                 </div>
+              </CardContent>
+            </Card>
 
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Signing in..." : "Sign in"}
-                </Button>
-              </form>
-
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">Demo credentials: admin@linkora.edu / admin123</p>
+            {/* Footer */}
+            <div className="text-center text-sm text-muted-foreground">
+              <p>© 2025 Linkora. All rights reserved.</p>
+              <div className="flex justify-center space-x-4 mt-2">
+                <Link href="/privacy" className="hover:underline">
+                  Privacy Policy
+                </Link>
+                <Link href="/terms" className="hover:underline">
+                  Terms of Service
+                </Link>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Footer */}
-          <div className="text-center text-sm text-muted-foreground">
-            <p>© 2024 Linkora. All rights reserved.</p>
-            <div className="flex justify-center space-x-4 mt-2">
-              <Link href="/privacy" className="hover:underline">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="hover:underline">
-                Terms of Service
-              </Link>
             </div>
           </div>
         </div>
-      </div>
     </ThemeProvider>
-  )
+  );
 }
+

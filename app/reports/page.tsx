@@ -34,6 +34,7 @@ interface ReportedUser {
   avatar: string;
 }
 
+// Fetch the list of reported users from backend API
 const fetchReportedUsers = async (): Promise<ReportedUser[]> => {
   const res = await fetch("http://localhost:3007/api/reported-users");
   return res.json();
@@ -46,10 +47,12 @@ export default function Reports() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
+  // Load reports once when the component mounts
   useEffect(() => {
     fetchReportedUsers().then(setReports);
   }, []);
 
+  // Mark a report as resolved on the server, then update local state
   const handleResolve = async (id: number) => {
     try {
       const response = await fetch(
@@ -59,7 +62,6 @@ export default function Reports() {
         }
       );
       if (response.ok) {
-        // Update the local state
         setReports(
           reports.map((report) =>
             report.id === id ? { ...report, status: "resolved" } : report
@@ -71,6 +73,7 @@ export default function Reports() {
     }
   };
 
+  // Filter reports based on search text and selected status
   const filteredReports = reports.filter((report) => {
     const matchesSearch =
       report.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -332,6 +335,7 @@ export default function Reports() {
   );
 }
 
+// Render badges with colors based on report status
 function getStatusBadge(status: string) {
   switch (status) {
     case "pending":
@@ -363,3 +367,4 @@ function getStatusBadge(status: string) {
       );
   }
 }
+ 
