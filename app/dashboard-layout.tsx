@@ -69,17 +69,17 @@ interface AdminProfile {
 const navigationItems = [
   {
     title: "Dashboard",
-    href: "/",
+    href: "/admin", // Changed from "/" to "/admin"
     icon: LayoutDashboard,
   },
   {
     title: "Manage Users",
-    href: "/manage-users",
+    href: "/admin/manage-users", // Added /admin prefix
     icon: Users,
   },
   {
     title: "Reports",
-    href: "/reports",
+    href: "/admin/reports", // Added /admin prefix
     icon: Flag,
   },
 ];
@@ -93,7 +93,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isEditing, setIsEditing] = useState(false); // Prevent any external interference
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth(); // Fixed: Added userEmail extraction
+  const { user, logout } = useAuth(); // Use useAuth hook
 
   // Single source-of-truth original profile (does NOT change while editing)
   const [originalProfile, setOriginalProfile] = useState<AdminProfile>(() => ({
@@ -590,7 +590,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <div className="flex h-full flex-col">
               <div className="flex h-16 items-center border-b px-6">
                 <Link
-                  href="/"
+                  href="/admin"
                   className="flex items-center gap-2 font-semibold"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -639,7 +639,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {/* Desktop Sidebar */}
           <Sidebar className="hidden border-r md:flex">
             <SidebarHeader className="border-b p-6">
-              <Link href="/" className="flex items-center gap-2 font-semibold">
+              <Link href="/admin" className="flex items-center gap-2 font-semibold">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <BarChart3 className="h-4 w-4" />
                 </div>
@@ -721,7 +721,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       <div className="hidden text-left lg:block">
                         <p className="text-sm font-medium">Admin User</p>
                         <p className="text-xs text-muted-foreground">
-                          admin@linkora.com
+                          {user?.email || 'admin@linkora.com'}
                         </p>
                       </div>
                       <ChevronDown className="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />

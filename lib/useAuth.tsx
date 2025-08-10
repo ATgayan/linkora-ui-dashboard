@@ -142,7 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async (): Promise<void> => {
     clearError();
-    
     try {
       await signOut(auth);
       // Clear any server-side session
@@ -152,12 +151,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           credentials: "include",
         }).catch(console.error); // Don't throw if this fails
       }
+      router.push("/login");
     } catch (error) {
       console.error("Logout error:", error);
       setAuthError(error as AuthError);
       throw error;
     }
-  }, [clearError, setAuthError, baseUrl]);
+  }, [clearError, setAuthError, baseUrl, router]);
 
   useEffect(() => {
     let isMounted = true;
