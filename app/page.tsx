@@ -1,6 +1,9 @@
 "use client";
+import React from "react";
 import { BarChart3, Users, Users2, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
+import { redirect } from "next/navigation";
+import { useAuth } from "@/lib/useAuth";
 import {
   Card,
   CardContent,
@@ -187,6 +190,18 @@ export default function Dashboard() {
   //     .then(setRecentActivity);
   // }, []);
 
+  const { user, loading } = useAuth();
+  const router = require('next/navigation').useRouter();
+
+  // Only redirect in useEffect, not during render
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [loading, user, router]);
+
+  if (loading || !user) return null;
+  // ...existing dashboard code...
   // Bar Chart Component
   const BarChart = ({ data }: { data: SkillData }) => {
     const maxCount = Math.max(
