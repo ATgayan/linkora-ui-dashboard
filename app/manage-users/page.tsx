@@ -58,9 +58,9 @@ export default function ManageUsers() {
   useEffect(() => {
     fetchUsersFromBackend().then((data) => {
       // Add missing fields and normalize status to lowercase
-      const enhanced = data.map((user: any, index: number) => ({
+      const enhanced = data.map((user: Record<string, unknown>, index: number) => ({
         ...user,
-        status: user.status ? user.status.toLowerCase() : "pending",
+        status: user.status && typeof user.status === 'string' ? user.status.toLowerCase() : "pending",
         id: index + 1,
         avatar: "/placeholder.svg?height=40&width=40",
         joinDate: "2024-01-01", // static placeholder
