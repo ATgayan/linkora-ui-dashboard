@@ -1,8 +1,12 @@
 "use client";
 
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { BarChart3, Users, Users2, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/components/theme-provider";
+import { DashboardLayout } from "../dashboard-layout";
+import { useAuth } from "@/lib/useAuth";
 
 // Mock data for analytics
 const genderData = [
@@ -159,16 +163,28 @@ const PieChart = ({ data }) => {
 };
 
 export default function AdminPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  // Only redirect in useEffect, not during render
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [loading, user, router]);
+
+  if (loading || !user) return null;
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-        <p className="text-muted-foreground">
-          Welcome back, {user?.email}! Here's what's happening on your platform.
-        </p>
-      </div>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <DashboardLayout>
+        <div className="flex flex-col gap-6 p-4 md:p-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
+            <p className="text-muted-foreground">
+              Welcome back, {user?.email}! Here&apos;s what&apos;s happening on your platform.
+            </p>
+          </div>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -332,5 +348,7 @@ export default function AdminPage() {
         </CardContent>
       </Card>
     </div>
+    </DashboardLayout>
+    </ThemeProvider>
   );
 }
