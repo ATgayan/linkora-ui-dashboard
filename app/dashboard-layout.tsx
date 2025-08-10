@@ -55,6 +55,17 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/components/auth-provider";
 
+interface AdminProfile {
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  phone: string;
+  location: string;
+  bio: string;
+  joinDate: string;
+}
+
 const navigationItems = [
   {
     title: "Dashboard",
@@ -75,37 +86,43 @@ const navigationItems = [
 ];
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+  // Dialog state completely isolated from profile data
+  const [open, setOpen] = useState(false); // Mobile sheet state
   const [profileOpen, setProfileOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // Prevent any external interference
   const router = useRouter();
   const pathname = usePathname();
   const { userEmail, logout } = useAuth();
 
-  // Stable original profile data (memoized to prevent recreations)
-  const originalProfile = useMemo(
-    () => ({
-      name: "Admin User",
-      email: userEmail || "admin@linkora.com",
-      role: "System Administrator",
-      department: "IT Department",
-      phone: "+94 77 123 4567",
-      location: "Colombo, Sri Lanka",
-      bio: "Experienced system administrator managing the Linkora platform with expertise in user management and system operations.",
-      joinDate: "January 2024",
-    }),
-    [userEmail]
-  );
+  // Single source-of-truth original profile (does NOT change while editing)
+  const [originalProfile, setOriginalProfile] = useState<AdminProfile>(() => ({
+    name: "Admin User",
+    email: userEmail || "admin@linkora.com",
+    role: "System Administrator",
+    department: "IT Department",
+    phone: "+94 77 123 4567",
+    location: "Colombo, Sri Lanka",
+    bio: "Experienced system administrator managing the Linkora platform with expertise in user management and system operations.",
+    joinDate: "January 2024",
+  }));
 
-  // Current profile state (editable)
-  const [profile, setProfile] = useState(originalProfile);
+  // Editable working copy
+  const [profile, setProfile] = useState<AdminProfile>(originalProfile);
 
-  // Update profile when originalProfile changes
+  // If the authenticated email arrives later AND user is not editing, inject it once.
   useEffect(() => {
-    setProfile(originalProfile);
-    setHasChanges(false);
-  }, [originalProfile]);
+    if (
+      !profileOpen &&
+      !isEditing &&
+      userEmail &&
+      userEmail !== originalProfile.email
+    ) {
+      setOriginalProfile((prev) => ({ ...prev, email: userEmail }));
+      setProfile((prev) => ({ ...prev, email: userEmail }));
+    }
+  }, [userEmail, profileOpen, isEditing, originalProfile.email]);
 
   // Debounce timer ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -123,7 +140,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     [originalProfile]
   );
 
-  // Completely stable input component - prevents ALL re-renders during typing
+  // Stable profile input component with no re-renders
   const StableInput = memo(
     ({
       id,
@@ -146,47 +163,32 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }) => {
       const [localValue, setLocalValue] = useState(value);
       const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-      const isTypingRef = useRef(false);
 
-      // Only sync external changes when NOT typing
+      // Sync with prop value when it changes externally
       useEffect(() => {
-        if (!isTypingRef.current && value !== localValue) {
+        if (value !== localValue) {
           setLocalValue(value);
         }
-      }, [value, localValue]);
+      }, [value]);
 
       const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
           const newValue = e.target.value;
-          isTypingRef.current = true;
           setLocalValue(newValue);
 
-          // Clear existing timeout
-          if (timeoutRef.current) {
+          // Only propagate changes if not disabled and value actually changed
+          if (!disabled && timeoutRef.current) {
             clearTimeout(timeoutRef.current);
           }
 
-          // Debounce the parent update
-          timeoutRef.current = setTimeout(() => {
-            isTypingRef.current = false;
-            onChange(newValue);
-          }, 300); // Increased debounce for better stability
+          if (!disabled) {
+            timeoutRef.current = setTimeout(() => {
+              onChange(newValue);
+            }, 150); // Slightly longer debounce
+          }
         },
-        [onChange]
+        [onChange, disabled]
       );
-
-      const handleFocus = useCallback(() => {
-        isTypingRef.current = true;
-      }, []);
-
-      const handleBlur = useCallback(() => {
-        // Immediate update on blur and stop typing flag
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-        isTypingRef.current = false;
-        onChange(localValue);
-      }, [onChange, localValue]);
 
       useEffect(() => {
         return () => {
@@ -202,26 +204,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           type={type}
           value={localValue}
           onChange={handleChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
           placeholder={placeholder}
           required={required}
           disabled={disabled}
           className={className}
         />
-      );
-    },
-    // Prevent re-renders by comparing only essential props
-    (prevProps, nextProps) => {
-      return (
-        prevProps.id === nextProps.id &&
-        prevProps.type === nextProps.type &&
-        prevProps.placeholder === nextProps.placeholder &&
-        prevProps.required === nextProps.required &&
-        prevProps.disabled === nextProps.disabled &&
-        prevProps.className === nextProps.className &&
-        prevProps.onChange === nextProps.onChange
-        // Deliberately exclude 'value' to prevent re-renders during typing
       );
     }
   );
@@ -247,47 +234,30 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }) => {
       const [localValue, setLocalValue] = useState(value);
       const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-      const isTypingRef = useRef(false);
 
-      // Only sync external changes when NOT typing
+      // Sync with prop value when it changes externally
       useEffect(() => {
-        if (!isTypingRef.current && value !== localValue) {
+        if (value !== localValue) {
           setLocalValue(value);
         }
-      }, [value, localValue]);
+      }, [value]);
 
       const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLTextAreaElement>) => {
           const newValue = e.target.value;
-          isTypingRef.current = true;
           setLocalValue(newValue);
 
-          // Clear existing timeout
+          // Only propagate changes and clear existing timeouts
           if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
           }
 
-          // Debounce the parent update
           timeoutRef.current = setTimeout(() => {
-            isTypingRef.current = false;
             onChange(newValue);
-          }, 300); // Increased debounce for better stability
+          }, 150); // Slightly longer debounce
         },
         [onChange]
       );
-
-      const handleFocus = useCallback(() => {
-        isTypingRef.current = true;
-      }, []);
-
-      const handleBlur = useCallback(() => {
-        // Immediate update on blur and stop typing flag
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-        isTypingRef.current = false;
-        onChange(localValue);
-      }, [onChange, localValue]);
 
       useEffect(() => {
         return () => {
@@ -302,62 +272,31 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           id={id}
           value={localValue}
           onChange={handleChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
           rows={rows}
           placeholder={placeholder}
           className={className}
         />
-      );
-    },
-    // Prevent re-renders by comparing only essential props
-    (prevProps, nextProps) => {
-      return (
-        prevProps.id === nextProps.id &&
-        prevProps.placeholder === nextProps.placeholder &&
-        prevProps.rows === nextProps.rows &&
-        prevProps.className === nextProps.className &&
-        prevProps.onChange === nextProps.onChange
-        // Deliberately exclude 'value' to prevent re-renders during typing
       );
     }
   );
 
   StableTextarea.displayName = "StableTextarea";
 
-  // Optimized profile field update with better debouncing
+  // Optimized profile field update with better debouncing & no dialog side-effects
   const updateProfileField = useCallback(
-    (field: keyof typeof profile, value: string) => {
+    (field: keyof AdminProfile, value: string) => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       setProfile((prev) => {
-        // Only update if value actually changed
-        if (prev[field] === value) return prev;
-
-        const newProfile = { ...prev, [field]: value };
-
-        // Clear any existing timeout
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-        }
-
-        // Debounce change detection with longer delay for stability
+        if (prev[field] === value) return prev; // no-op
+        const next = { ...prev, [field]: value };
         debounceTimerRef.current = setTimeout(() => {
-          checkForChanges(newProfile);
-        }, 500); // Increased to 500ms for maximum stability
-
-        return newProfile;
+          checkForChanges(next);
+        }, 180);
+        return next;
       });
     },
     [checkForChanges]
   );
-
-  // Create stable callback refs for each field to prevent re-renders
-  const nameChangeCallback = useCallback((value: string) => updateProfileField("name", value), [updateProfileField]);
-  const emailChangeCallback = useCallback((value: string) => updateProfileField("email", value), [updateProfileField]);
-  const roleChangeCallback = useCallback((value: string) => updateProfileField("role", value), [updateProfileField]);
-  const departmentChangeCallback = useCallback((value: string) => updateProfileField("department", value), [updateProfileField]);
-  const phoneChangeCallback = useCallback((value: string) => updateProfileField("phone", value), [updateProfileField]);
-  const locationChangeCallback = useCallback((value: string) => updateProfileField("location", value), [updateProfileField]);
-  const bioChangeCallback = useCallback((value: string) => updateProfileField("bio", value), [updateProfileField]);
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
@@ -379,9 +318,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
-
+      // Persist working copy as new original
+      setOriginalProfile(profile);
       setHasChanges(false);
       setProfileOpen(false);
+      setIsEditing(false);
 
       // In a real app, you would make an API call here
       console.log("Profile saved successfully:", profile);
@@ -397,14 +338,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   // Cancel profile changes with useCallback
   const handleCancelProfile = useCallback(() => {
-    // Clear any pending debounce
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    // Revert edits
     setProfile(originalProfile);
     setHasChanges(false);
     setProfileOpen(false);
+    setIsEditing(false);
   }, [originalProfile]);
 
   const handleNavigation = useCallback(
@@ -428,6 +367,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const handleProfileClick = () => {
     setProfileOpen(true);
+    setIsEditing(true);
   };
 
   // Profile Popup Component
@@ -435,15 +375,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     <Dialog
       open={profileOpen}
       onOpenChange={(open) => {
-        if (!open && hasChanges) {
-          // Show confirmation dialog if there are unsaved changes
-          const confirmClose = window.confirm(
-            "You have unsaved changes. Are you sure you want to close?"
-          );
-          if (!confirmClose) return;
-          handleCancelProfile();
-        } else {
-          setProfileOpen(open);
+        if (!open) {
+          if (hasChanges) {
+            // Show confirmation dialog if there are unsaved changes
+            const confirmClose = window.confirm(
+              "You have unsaved changes. Are you sure you want to close?"
+            );
+            if (!confirmClose) return;
+            handleCancelProfile();
+          } else {
+            setProfileOpen(false);
+            setIsEditing(false);
+          }
         }
       }}
     >
@@ -488,7 +431,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <StableInput
                   id="name"
                   value={profile.name}
-                  onChange={nameChangeCallback}
+                  onChange={(value) => updateProfileField("name", value)}
                   placeholder="Enter your full name"
                   required
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
@@ -502,7 +445,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   id="email"
                   type="email"
                   value={profile.email}
-                  onChange={emailChangeCallback}
+                  onChange={(value) => updateProfileField("email", value)}
                   placeholder="Enter your email address"
                   required
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
@@ -518,7 +461,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <StableInput
                   id="role"
                   value={profile.role}
-                  onChange={roleChangeCallback}
+                  onChange={(value) => updateProfileField("role", value)}
                   placeholder="Enter your role"
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
                 />
@@ -530,7 +473,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <StableInput
                   id="department"
                   value={profile.department}
-                  onChange={departmentChangeCallback}
+                  onChange={(value) => updateProfileField("department", value)}
                   placeholder="Enter your department"
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
                 />
@@ -545,7 +488,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <StableInput
                   id="phone"
                   value={profile.phone}
-                  onChange={phoneChangeCallback}
+                  onChange={(value) => updateProfileField("phone", value)}
                   placeholder="Enter your phone number"
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
                 />
@@ -557,7 +500,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <StableInput
                   id="location"
                   value={profile.location}
-                  onChange={locationChangeCallback}
+                  onChange={(value) => updateProfileField("location", value)}
                   placeholder="Enter your location"
                   className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
                 />
@@ -571,7 +514,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <StableTextarea
                 id="bio"
                 value={profile.bio}
-                onChange={bioChangeCallback}
+                onChange={(value) => updateProfileField("bio", value)}
                 placeholder="Tell us about yourself..."
                 className="resize-none bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:border-gray-500 focus:ring-gray-500"
               />
