@@ -76,7 +76,7 @@ export default function LoginPage() {
               </CardHeader>
 
               <CardContent>
-                <form onSubmit={handleLogin} className="space-y-4" aria-describedby={error ? "login-error" : undefined}>
+                <form onSubmit={handleSubmit} className="space-y-4" aria-describedby={error ? "login-error" : undefined}>
                   {error && (
                     <Alert variant="destructive" id="login-error">
                       <AlertDescription>{error}</AlertDescription>
