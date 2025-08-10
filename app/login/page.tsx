@@ -1,59 +1,77 @@
-"use client"
+"use client";
 
-import type React from "react"
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Eye, EyeOff, BarChart3, Lock, Mail } from "lucide-react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Eye, EyeOff, BarChart3, Lock, Mail } from "lucide-react"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ThemeProvider } from "@/components/theme-provider";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ThemeProvider } from "@/components/theme-provider"
+import { useAuth } from "@/lib/useAuth"; 
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+  const { login } = useAuth();
 
-    // Simulate API call
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError("");
 
-      // Simple validation for demo
-      if (email === "admin@linkora.edu" && password === "admin123") {
-        // Store auth state in localStorage for demo
-        localStorage.setItem("isAuthenticated", "true")
-        localStorage.setItem("userEmail", email)
-        router.push("/")
-      } else {
-        setError("Invalid email or password. Use admin@linkora.edu / admin123")
-      }
-    } catch (err) {
-      setError("An error occurred. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
+  // Hardcoded admin check
+  const adminEmail = "admin@gmail.com";
+  const adminPassword = "Admin1234";
+
+  if (email !== adminEmail || password !== adminPassword) {
+    setError("Only the admin account is allowed to log in.");
+    setIsLoading(false);
+    return;
   }
+
+  try {
+    // Use your useAuth login function
+    await login(email, password);
+    console.log("Login successful");
+
+    localStorage.setItem("isAuthenticated", "true");
+    localStorage.setItem("userEmail", email);
+    localStorage.setItem("userRole", "admin");
+
+    router.push("/");
+  } catch (err: any) {
+    if (err.code === "auth/user-not-found") {
+      setError("No account found with this email.");
+    } else if (err.code === "auth/wrong-password") {
+      setError("Incorrect password. Please try again.");
+    } else if (err.code === "auth/invalid-email") {
+      setError("Invalid email format.");
+    } else {
+      setError(err.message || "Login failed. Please try again.");
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
         <div className="w-full max-w-md space-y-8">
-          {/* Logo and Header */}
+          {/* Logo */}
           <div className="text-center">
             <div className="flex justify-center mb-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
@@ -173,5 +191,5 @@ export default function LoginPage() {
         </div>
       </div>
     </ThemeProvider>
-  )
+  );
 }

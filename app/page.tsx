@@ -169,23 +169,23 @@ export default function Dashboard() {
   const [topInterests, setTopInterests] = useState<InterestData>([]);
   const [recentActivity, setRecentActivity] = useState<ActivityData>([]);
 
-  useEffect(() => {
-    fetch("http://localhost:3007/api/dashboard/gender")
-      .then((res) => res.json())
-      .then(setGenderData);
-    fetch("http://localhost:3007/api/dashboard/year")
-      .then((res) => res.json())
-      .then(setYearData);
-    fetch("http://localhost:3007/api/dashboard/skills")
-      .then((res) => res.json())
-      .then(setTopSkills);
-    fetch("http://localhost:3007/api/dashboard/interests")
-      .then((res) => res.json())
-      .then(setTopInterests);
-    fetch("http://localhost:3007/api/dashboard/activity")
-      .then((res) => res.json())
-      .then(setRecentActivity);
-  }, []);
+  // useEffect(() => {
+  //   fetch("http://localhost:3007/api/dashboard/gender")
+  //     .then((res) => res.json())
+  //     .then(setGenderData);
+  //   fetch("http://localhost:3007/api/dashboard/year")
+  //     .then((res) => res.json())
+  //     .then(setYearData);
+  //   fetch("http://localhost:3007/api/dashboard/skills")
+  //     .then((res) => res.json())
+  //     .then(setTopSkills);
+  //   fetch("http://localhost:3007/api/dashboard/interests")
+  //     .then((res) => res.json())
+  //     .then(setTopInterests);
+  //   fetch("http://localhost:3007/api/dashboard/activity")
+  //     .then((res) => res.json())
+  //     .then(setRecentActivity);
+  // }, []);
 
   // Bar Chart Component
   const BarChart = ({ data }: { data: SkillData }) => {

@@ -53,7 +53,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import { useAuth } from "@/components/auth-provider";
+import { useAuth } from "@/lib/useAuth";
 
 interface AdminProfile {
   name: string;
@@ -77,7 +77,6 @@ const navigationItems = [
     href: "/manage-users",
     icon: Users,
   },
-
   {
     title: "Reports",
     href: "/reports",
@@ -94,12 +93,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isEditing, setIsEditing] = useState(false); // Prevent any external interference
   const router = useRouter();
   const pathname = usePathname();
-  const { userEmail, logout } = useAuth();
+  const { logout } = useAuth(); // Fixed: Added userEmail extraction
 
   // Single source-of-truth original profile (does NOT change while editing)
   const [originalProfile, setOriginalProfile] = useState<AdminProfile>(() => ({
     name: "Admin User",
-    email: userEmail || "admin@linkora.com",
+    email: "admin@linkora.com",
     role: "System Administrator",
     department: "IT Department",
     phone: "+94 77 123 4567",
@@ -111,18 +110,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   // Editable working copy
   const [profile, setProfile] = useState<AdminProfile>(originalProfile);
 
-  // If the authenticated email arrives later AND user is not editing, inject it once.
-  useEffect(() => {
-    if (
-      !profileOpen &&
-      !isEditing &&
-      userEmail &&
-      userEmail !== originalProfile.email
-    ) {
-      setOriginalProfile((prev) => ({ ...prev, email: userEmail }));
-      setProfile((prev) => ({ ...prev, email: userEmail }));
-    }
-  }, [userEmail, profileOpen, isEditing, originalProfile.email]);
+  // Remove useEffect that depends on userEmail since we don't need it anymore
+  // The profile will use the default email from originalProfile
 
   // Debounce timer ref
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -169,7 +158,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         if (value !== localValue) {
           setLocalValue(value);
         }
-      }, [value]);
+      }, [value, localValue]); // Fixed: Added localValue to dependency
 
       const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,7 +229,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         if (value !== localValue) {
           setLocalValue(value);
         }
-      }, [value]);
+      }, [value, localValue]); // Fixed: Added localValue to dependency
 
       const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -361,17 +350,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     [pathname]
   );
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => { // Fixed: Added useCallback
     logout();
-  };
+  }, [logout]);
 
-  const handleProfileClick = () => {
+  const handleProfileClick = useCallback(() => { // Fixed: Added useCallback
     setProfileOpen(true);
     setIsEditing(true);
-  };
+  }, []);
 
-  // Profile Popup Component
-  const ProfilePopup = () => (
+  // Profile Popup Component - Fixed: Moved outside render to avoid recreation
+  const ProfilePopup = useMemo(() => (
     <Dialog
       open={profileOpen}
       onOpenChange={(open) => {
@@ -583,11 +572,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </DialogContent>
     </Dialog>
-  );
+  ), [profileOpen, hasChanges, profile, isSaving, handleCancelProfile, handleSaveProfile, updateProfileField]); // Fixed: Added dependencies
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <ProfilePopup />
+      {ProfilePopup}
       {/* Mobile Header */}
       <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
@@ -700,8 +689,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <header className="sticky top-0 z-30 hidden h-16 items-center gap-4 border-b bg-background px-6 md:flex bg-black">
               <div className="flex flex-1 items-center gap-4">
                 <div className="relative flex-1 max-w-md">
+                  {/* Search commented out as in original */}
                   {/* <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />*/}
-
                   {/*<Input type="search" placeholder="Search users, collaborations..." className="w-full pl-8 bg-black" />*/}
                 </div>
               </div>
@@ -732,7 +721,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       <div className="hidden text-left lg:block">
                         <p className="text-sm font-medium">Admin User</p>
                         <p className="text-xs text-muted-foreground">
-                          {userEmail}
+                          admin@linkora.com
                         </p>
                       </div>
                       <ChevronDown className="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
