@@ -2,8 +2,7 @@
 import { BarChart3, Users, Users2, TrendingUp } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ThemeProvider } from "@/components/theme-provider"
-import { DashboardLayout } from "./dashboard-layout"
+import { ProtectedRoute } from "@/components/ProtectedRoute"
 
 // Mock data for analytics
 const genderData = [
@@ -156,177 +155,175 @@ const PieChart = ({ data }: { data: typeof topInterests }) => {
 
 export default function Dashboard() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <DashboardLayout>
-        <div className="flex flex-col gap-6 p-4 md:p-8">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-            <p className="text-muted-foreground">Welcome back! Here's what's happening on your platform.</p>
-          </div>
+    <ProtectedRoute>
+      <div className="flex flex-col gap-6 p-4 md:p-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
+          <p className="text-muted-foreground">Welcome back! Here's what's happening on your platform.</p>
+        </div>
 
-          {/* Summary Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">2,847</div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">+12.5%</span> from last month
-                </p>
-              </CardContent>
-            </Card>
-            {/*<Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Collaborations</CardTitle>
-                <Users2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">156</div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-green-600">+8.2%</span> from last month
-                </p>
-              </CardContent>
-            </Card>*/}
+        {/* Summary Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">2,847</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="text-green-600">+12.5%</span> from last month
+              </p>
+            </CardContent>
+          </Card>
+          {/*<Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Collaborations</CardTitle>
+              <Users2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">156</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="text-green-600">+8.2%</span> from last month
+              </p>
+            </CardContent>
+          </Card>*/}
 
-            {/*<Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Reports</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">23</div>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-red-600">+3</span> new this week
-                </p>
-              </CardContent>
-            </Card>*/}
+          {/*<Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Reports</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">23</div>
+              <p className="text-xs text-muted-foreground">
+                <span className="text-red-600">+3</span> new this week
+              </p>
+            </CardContent>
+          </Card>*/}
 
-            {/*<Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Monthly Growth</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">+15.3%</div>
-                <p className="text-xs text-muted-foreground">User registration rate</p>
-              </CardContent>
-            </Card>*/}
-            
-          </div>
+          {/*<Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Monthly Growth</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">+15.3%</div>
+              <p className="text-xs text-muted-foreground">User registration rate</p>
+            </CardContent>
+          </Card>*/}
+          
+        </div>
 
-          {/* Charts Section */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Gender Distribution */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Gender Distribution</CardTitle>
-                <CardDescription>User demographics breakdown</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {genderData.map((item) => (
-                    <div key={item.label} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded ${item.color}`} />
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-32 bg-muted rounded-full h-2">
-                          <div className={`h-2 rounded-full ${item.color}`} style={{ width: `${item.value}%` }} />
-                        </div>
-                        <span className="text-sm text-muted-foreground w-10">{item.value}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* University Year Distribution */}
-            <Card>
-              <CardHeader>
-                <CardTitle>University Year Distribution</CardTitle>
-                <CardDescription>Students by academic year</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {yearData.map((item) => (
-                    <div key={item.label} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded ${item.color}`} />
-                        <span className="text-sm font-medium">{item.label}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-32 bg-muted rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${item.color}`}
-                            style={{ width: `${(item.value / 35) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm text-muted-foreground w-10">{item.value}%</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Skills and Interests Charts */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Top Skills - Bar Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Most Common Skills</CardTitle>
-                <CardDescription>Popular skills among users</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <BarChart data={topSkills} />
-              </CardContent>
-            </Card>
-
-            {/* Top Interests - Pie Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Most Common Interests</CardTitle>
-                <CardDescription>Popular interests among users</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PieChart data={topInterests} />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Activity */}
+        {/* Charts Section */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Gender Distribution */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest platform activities and updates</CardDescription>
+              <CardTitle>Gender Distribution</CardTitle>
+              <CardDescription>User demographics breakdown</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentActivity.map((activity) => {
-                  const Icon = activity.icon
-                  return (
-                    <div key={activity.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50">
-                      <div className={`p-2 rounded-full bg-muted ${activity.color}`}>
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{activity.message}</p>
-                        <p className="text-xs text-muted-foreground">{activity.time}</p>
-                      </div>
+                {genderData.map((item) => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded ${item.color}`} />
+                      <span className="text-sm font-medium">{item.label}</span>
                     </div>
-                  )
-                })}
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 bg-muted rounded-full h-2">
+                        <div className={`h-2 rounded-full ${item.color}`} style={{ width: `${item.value}%` }} />
+                      </div>
+                      <span className="text-sm text-muted-foreground w-10">{item.value}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* University Year Distribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle>University Year Distribution</CardTitle>
+              <CardDescription>Students by academic year</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {yearData.map((item) => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded ${item.color}`} />
+                      <span className="text-sm font-medium">{item.label}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 bg-muted rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full ${item.color}`}
+                          style={{ width: `${(item.value / 35) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm text-muted-foreground w-10">{item.value}%</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         </div>
-      </DashboardLayout>
-    </ThemeProvider>
+
+        {/* Skills and Interests Charts */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Top Skills - Bar Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Most Common Skills</CardTitle>
+              <CardDescription>Popular skills among users</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BarChart data={topSkills} />
+            </CardContent>
+          </Card>
+
+          {/* Top Interests - Pie Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Most Common Interests</CardTitle>
+              <CardDescription>Popular interests among users</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PieChart data={topInterests} />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Latest platform activities and updates</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentActivity.map((activity) => {
+                const Icon = activity.icon
+                return (
+                  <div key={activity.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50">
+                    <div className={`p-2 rounded-full bg-muted ${activity.color}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{activity.message}</p>
+                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </ProtectedRoute>
   )
 }
