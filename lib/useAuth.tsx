@@ -173,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           // User signed out - redirect to auth page
           console.log("rederecting to auth page");
-          router.push('/auth');
+          router.push('/login');
         }
       } catch (error) {
         console.error("Auth state change error:", error);

@@ -72,17 +72,17 @@ interface AdminProfile {
 const navigationItems = [
   {
     title: "Dashboard",
-    href: "/admin", // Changed from "/" to "/admin"
+    href: "/", 
     icon: LayoutDashboard,
   },
   {
     title: "Manage Users",
-    href: "/admin/manage-users", // Added /admin prefix
+    href: "/manage-users", 
     icon: Users,
   },
   {
     title: "Reports",
-    href: "/admin/reports", // Added /admin prefix
+    href: "/reports", 
     icon: Flag,
   },
 ];
