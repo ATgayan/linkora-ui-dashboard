@@ -60,11 +60,12 @@ const handleSubmit = async (e: React.FormEvent) => {
         body: JSON.stringify({}), // send empty body or any data your backend expects
       });
       console.log("login successful", response);
+      router.push("/");
 
       if (!response.ok) {
         throw new Error("Failed to set token cookie on backend");
       }
-      router.push("/");
+      
     } else {
       setError("Invalid login credentials");
     }
