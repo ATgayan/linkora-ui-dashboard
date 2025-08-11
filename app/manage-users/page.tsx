@@ -134,7 +134,7 @@ export default function ManageUsers() {
         queryParams.append("page", currentPage.toString());
         queryParams.append("limit", "20");
 
-        const res = await fetch(`${baseurl}/admin/pending-users?${queryParams}`, {
+        const res = await fetch(`${baseurl}/admin/pending-users`, {
           method: "GET",
           credentials: "include",
           headers: {
