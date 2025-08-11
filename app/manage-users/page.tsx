@@ -127,14 +127,17 @@ export default function ManageUsers() {
       try {
         const queryParams = new URLSearchParams();
 
-        if (searchQuery) queryParams.append("search", searchQuery);
+        if (searchQuery.trim()) queryParams.append("search", searchQuery.trim());
         if (statusFilter && statusFilter !== "all") queryParams.append("status", statusFilter);
         if (genderFilter && genderFilter !== "all") queryParams.append("gender", genderFilter);
         if (yearFilter && yearFilter !== "all") queryParams.append("year", yearFilter);
         queryParams.append("page", currentPage.toString());
         queryParams.append("limit", "20");
 
-        const res = await fetch(`${baseurl}/admin/pending-users`, {
+        const url = `${baseurl}/admin/pending-users?${queryParams.toString()}`;
+        console.log("Fetching from URL:", url);
+
+        const res = await fetch(url, {
           method: "GET",
           credentials: "include",
           headers: {
@@ -142,24 +145,60 @@ export default function ManageUsers() {
           },
         });
 
+        console.log("Response status:", res.status);
+        console.log("Response headers:", Object.fromEntries(res.headers.entries()));
+
         if (!res.ok) {
-          throw new Error(`Error: ${res.statusText}`);
+          const errorText = await res.text();
+          console.error("API Error Response:", errorText);
+          throw new Error(`Error: ${res.status} ${res.statusText}`);
         }
 
         const data = await res.json();
-        console.log("Fetched users:", data);
-        if ("success" in data && data.success) {
-          setUsers(data.data || []);
-          setTotalPages(data.totalPages || 1);
-          setTotalCount(data.totalCount || 0);
+        console.log("Raw API Response:", data);
+        console.log("Data type:", typeof data);
+        console.log("Data keys:", Object.keys(data));
+
+        if (data && typeof data === 'object') {
+          // Handle different API response structures
+          if (data.success === true || data.success === undefined) {
+            const userData = data.data || data.users || data.result || data;
+            const usersArray = Array.isArray(userData) ? userData : [];
+            
+            console.log("Processed users array:", usersArray);
+            console.log("Users array length:", usersArray.length);
+            
+            setUsers(usersArray);
+            setTotalPages(data.totalPages || Math.ceil((data.totalCount || usersArray.length) / 20) || 1);
+            setTotalCount(data.totalCount || usersArray.length || 0);
+            
+            if (usersArray.length === 0) {
+              console.warn("No users found in API response");
+            }
+          } else {
+            console.error("API returned error:", data.message || data.error);
+            toast({
+              title: "Error",
+              description: data.message || data.error || "Failed to fetch users",
+              variant: "destructive",
+            });
+            setUsers([]);
+            setTotalPages(1);
+            setTotalCount(0);
+          }
         } else {
-          console.error("API returned error:", (data as ApiError).message);
+          console.error("Invalid API response format:", data);
           setUsers([]);
           setTotalPages(1);
           setTotalCount(0);
         }
       } catch (err) {
         console.error("Failed to fetch pending users:", err);
+        toast({
+          title: "Error",
+          description: "Failed to fetch users. Please check your connection and try again.",
+          variant: "destructive",
+        });
         setUsers([]);
         setTotalPages(1);
         setTotalCount(0);
@@ -168,8 +207,10 @@ export default function ManageUsers() {
       }
     };
 
-    fetchUsers();
-  }, [searchQuery, statusFilter, genderFilter, yearFilter, currentPage, baseurl]);
+    // Add debounce for search
+    const timeoutId = setTimeout(fetchUsers, searchQuery ? 500 : 0);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, statusFilter, genderFilter, yearFilter, currentPage, baseurl, toast]);
 
   
  // Handle user approval with optimistic UI update
@@ -237,9 +278,6 @@ const handleApprove = async (uid: string) => {
   }
 };
 
-
-
-
 // Handle user ban with optimistic UI update
 const handleBan = async (uid: string) => {
   setBanningUsers((prev) => new Set([...prev, uid]));
@@ -306,7 +344,6 @@ const handleBan = async (uid: string) => {
     });
   }
 };
-
 
   // Handle user resolution
   const handleResolve = async (userId: string) => {
@@ -410,7 +447,25 @@ const handleBan = async (uid: string) => {
     }
   };
 
-  const filteredUsers = users;
+  // Client-side filtering (if needed)
+  const filteredUsers = users.filter(user => {
+    // If API doesn't handle filtering, do it client-side
+    const matchesSearch = !searchQuery.trim() || 
+      user.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || 
+      (statusFilter === "active" && user.profile_state === "Approved") ||
+      (statusFilter === "pending" && user.profile_state === "pending") ||
+      (statusFilter === "banned" && user.profile_state === "Banned") ||
+      (statusFilter === "resolved" && user.register_state === "resolved");
+    
+    const matchesGender = genderFilter === "all" || user.Gender === genderFilter;
+    
+    const matchesYear = yearFilter === "all" || user.university?.universityYear === yearFilter;
+    
+    return matchesSearch && matchesStatus && matchesGender && matchesYear;
+  });
 
   const toggleSelectUser = (userId: string) => {
     setSelectedUsers((prev) =>
@@ -449,25 +504,29 @@ const getStatusBadge = (status?: string) => {
         </Badge>
       );
     default:
-      return null;
+      return (
+        <Badge className="bg-gray-100 text-gray-800 border border-gray-300 dark:bg-gray-900/30 dark:text-gray-400 dark:border-gray-700">
+          Unknown
+        </Badge>
+      );
   }
 };
 
-useEffect(() => {
-  getStatusBadge();
-  console.log("Effect triggered due to handleBan or handleApprove change");
-}, [handleBan, handleApprove]);
-
-
-  
-
   const getUserInitials = (name: string) => {
+    if (!name) return "??";
     return name
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  // Pagination controls
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
   };
 
   return (
@@ -480,6 +539,10 @@ useEffect(() => {
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Review and manage user accounts on the platform ({totalCount} total users)
           </p>
+          {/* Debug info - remove in production */}
+          <div className="text-xs text-gray-500 mt-1">
+            Showing {filteredUsers.length} users | Page {currentPage} of {totalPages}
+          </div>
         </div>
 
         {/* Bulk Actions */}
@@ -573,7 +636,7 @@ useEffect(() => {
         </Card>
 
         {/* Table */}
-        <Card className=" flex-1 min-h-0 overflow-hidden bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-gray-200/80 dark:border-gray-800/80 shadow-lg">
+        <Card className="flex-1 min-h-0 overflow-hidden bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-gray-200/80 dark:border-gray-800/80 shadow-lg">
           <CardHeader className="py-4 flex-none border-b border-gray-200/50 dark:border-gray-800/50">
             <CardTitle className="text-gray-900 dark:text-white">
               Users ({filteredUsers.length})
@@ -583,7 +646,7 @@ useEffect(() => {
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <div className="max-h-[600px] overflow-y-auto">
-                <table className="w-full min-w-[900px]">
+                <table className="w-full table-auto">
                   <thead className="border-b bg-gray-50/80 dark:bg-gray-800/80 sticky top-0 z-10 backdrop-blur-sm">
                     <tr className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       <th className="p-4 text-left">
@@ -617,7 +680,14 @@ useEffect(() => {
                     ) : filteredUsers.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="p-8 text-center">
-                          <p className="text-gray-500 dark:text-gray-400">No users found matching the current filters.</p>
+                          <div className="text-gray-500 dark:text-gray-400">
+                            <p className="mb-2">No users found matching the current filters.</p>
+                            <p className="text-sm">
+                              Total users in database: {totalCount} | 
+                              Current page: {currentPage} | 
+                              API base URL: {baseurl || 'Not configured'}
+                            </p>
+                          </div>
                         </td>
                       </tr>
                     ) : (
@@ -643,7 +713,7 @@ useEffect(() => {
                                 <Avatar className="h-10 w-10">
                                   <AvatarImage
                                     src={user.profilePicture || undefined}
-                                    alt={user.fullName}
+                                    alt={user.fullName || 'User'}
                                   />
                                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
                                     {getUserInitials(user.fullName)}
@@ -651,7 +721,7 @@ useEffect(() => {
                                 </Avatar>
                                 <div>
                                   <p className="font-medium text-gray-900 dark:text-white">
-                                    {user.fullName}
+                                    {user.fullName || 'No name'}
                                   </p>
                                   <p className="text-sm text-gray-500 dark:text-gray-400">
                                     {user.university?.name || 'No university'}
@@ -677,7 +747,7 @@ useEffect(() => {
                                   disabled={
                                     isApproving || 
                                     isBanning ||
-                                    user.profile_state === "active" ||
+                                    user.profile_state === "Approved" ||
                                     user.profile_state === "resolved"
                                   }
                                   className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed min-w-[90px]"
@@ -701,7 +771,7 @@ useEffect(() => {
                                   disabled={
                                     isApproving || 
                                     isBanning ||
-                                    user.register_state === "banned" ||
+                                    user.profile_state === "Banned" ||
                                     user.register_state === "resolved"
                                   }
                                   className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed min-w-[80px]"
@@ -728,6 +798,67 @@ useEffect(() => {
                 </table>
               </div>
             </div>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-4 border-t border-gray-200/50 dark:border-gray-800/50">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Showing {((currentPage - 1) * 20) + 1} to {Math.min(currentPage * 20, totalCount)} of {totalCount} users
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage <= 1 || loading}
+                    className="text-gray-700 dark:text-gray-300"
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const page = i + 1;
+                      const isCurrentPage = page === currentPage;
+                      return (
+                        <Button
+                          key={page}
+                          size="sm"
+                          variant={isCurrentPage ? "default" : "outline"}
+                          onClick={() => handlePageChange(page)}
+                          disabled={loading}
+                          className={isCurrentPage ? "bg-blue-600 text-white" : "text-gray-700 dark:text-gray-300"}
+                        >
+                          {page}
+                        </Button>
+                      );
+                    })}
+                    {totalPages > 5 && (
+                      <>
+                        <span className="px-2 text-gray-500">...</span>
+                        <Button
+                          size="sm"
+                          variant={currentPage === totalPages ? "default" : "outline"}
+                          onClick={() => handlePageChange(totalPages)}
+                          disabled={loading}
+                          className={currentPage === totalPages ? "bg-blue-600 text-white" : "text-gray-700 dark:text-gray-300"}
+                        >
+                          {totalPages}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage >= totalPages || loading}
+                    className="text-gray-700 dark:text-gray-300"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
