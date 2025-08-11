@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   // Memoize the base URL to avoid recreating it on every render
-  const baseUrl = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL, []);
+   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const refreshUserToken = useCallback(async (user: User): Promise<void> => {
     if (!baseUrl) {
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = await user.getIdToken(true);
       
-      const response = await fetch(`${baseUrl}/auth/refresh-token`, {
+      const response = await fetch(`${baseUrl}/admin/refresh-admin-token`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Token refresh error:", error);
-      // Don't throw here to avoid disrupting the auth flow
+     
     }
   }, [baseUrl]);
 
@@ -169,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         if (user) {
+          
           await refreshUserToken(user);
         } else {
           // User signed out - redirect to auth page

@@ -19,16 +19,61 @@ import DashboardLayout from "../dashboard";
 
 import { useToast } from "@/components/ui/use-toast";
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  gender: string;
+type Achievement = {
+  title: string;
+  description?: string;
   year: string;
-  profile_states: string;
-  university: string;
-  avatar: string;
-  joinDate: string;
+}
+
+export type Post = {
+  id: string;
+  title: string;
+  content: string;
+}
+
+export type Props = {
+  posts?: Post[];
+}
+
+export type User = {
+  uid: string;
+  fullName: string;
+  degreeCard?: string | null;
+  Gender?: string | null;
+  profilePicture?: string | null;
+  bannerImage?: string | null;
+  email?: string | null;
+  profileCompleteness: number;
+  university?: {
+    name?: string | null;
+    faculty?: string | null;
+    degree?: string | null;
+    universityYear?: string | null;
+    positions?: string | null;
+  };
+  relationshipState?: string | null;
+  location?: string | null;
+  joinDate?: string | null;
+  personality?: {
+    type: string | null;
+    whoAmI?: string | null;
+    hobbies?: string[];
+    interests?: string | null;
+    achievements?: Achievement[] | null;
+    abilities?: string[] | null;
+    skills?: string[];
+  };
+  socialPreferences?: {
+    workWithPeople?: string;
+    beAroundPeople?: string;
+  };
+  activity?: {
+    posts?: number;
+  };
+  role?: string;
+  register_state?: string;
+  userquality?: string;
+  profile_state?: string;
 }
 
 interface PendingUserFilters {
@@ -58,7 +103,7 @@ interface ApiError {
 export default function ManageUsers() {
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
@@ -67,168 +112,210 @@ export default function ManageUsers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-
+  const [badgeState, setBadgeState] = useState('pending');
+  
+  // Loading states for individual actions
+  const [approvingUsers, setApprovingUsers] = useState<Set<string>>(new Set());
+  const [banningUsers, setBanningUsers] = useState<Set<string>>(new Set());
+  const [bulkApproving, setBulkApproving] = useState(false);
 
   const baseurl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
- useEffect(() => {
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const queryParams = new URLSearchParams();
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const queryParams = new URLSearchParams();
 
-      if (searchQuery) queryParams.append("search", searchQuery);
-      if (statusFilter && statusFilter !== "all") queryParams.append("status", statusFilter);
-      if (genderFilter && genderFilter !== "all") queryParams.append("gender", genderFilter);
-      if (yearFilter && yearFilter !== "all") queryParams.append("year", yearFilter);
-      queryParams.append("page", currentPage.toString());
-      queryParams.append("limit", "20");
+        if (searchQuery) queryParams.append("search", searchQuery);
+        if (statusFilter && statusFilter !== "all") queryParams.append("status", statusFilter);
+        if (genderFilter && genderFilter !== "all") queryParams.append("gender", genderFilter);
+        if (yearFilter && yearFilter !== "all") queryParams.append("year", yearFilter);
+        queryParams.append("page", currentPage.toString());
+        queryParams.append("limit", "20");
 
-      const res = await fetch(`${baseurl}/admin/pending-users`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+        const res = await fetch(`${baseurl}/admin/pending-users?${queryParams}`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
-      if (!res.ok) {
-        throw new Error(`Error: ${res.statusText}`);
-      }
+        if (!res.ok) {
+          throw new Error(`Error: ${res.statusText}`);
+        }
 
-      const data = await res.json();
-      console.log("Fetched users:", data);
-      if ("success" in data && data.success) {
-        setUsers(data.data || []);
-        setTotalPages(data.totalPages || 1);
-        setTotalCount(data.totalCount || 0);
-      } else {
-        console.error("API returned error:", (data as ApiError).message);
+        const data = await res.json();
+        console.log("Fetched users:", data);
+        if ("success" in data && data.success) {
+          setUsers(data.data || []);
+          setTotalPages(data.totalPages || 1);
+          setTotalCount(data.totalCount || 0);
+        } else {
+          console.error("API returned error:", (data as ApiError).message);
+          setUsers([]);
+          setTotalPages(1);
+          setTotalCount(0);
+        }
+      } catch (err) {
+        console.error("Failed to fetch pending users:", err);
         setUsers([]);
         setTotalPages(1);
         setTotalCount(0);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to fetch pending users:", err);
-      setUsers([]);
-      setTotalPages(1);
-      setTotalCount(0);
-    } finally {
-      setLoading(false);
+    };
+
+    fetchUsers();
+  }, [searchQuery, statusFilter, genderFilter, yearFilter, currentPage, baseurl]);
+
+  
+ // Handle user approval with optimistic UI update
+const handleApprove = async (uid: string) => {
+  setApprovingUsers((prev) => new Set([...prev, uid]));
+
+  // Save current users for rollback
+  const oldUsers = [...users];
+
+  // Optimistic UI: instantly mark as approved
+  setUsers((prev) =>
+    prev.map((user) =>
+      user.uid === uid ? { ...user, profile_state: "Approved" } : user
+    )
+  );
+
+  try {
+    console.log("Approving user with UID:", uid);
+    const response = await fetch(`${baseurl}/admin/user-state`, {
+      method: "PUT",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        statedata: "Approved",
+        uid: uid,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  };
 
-  fetchUsers();
-}, [searchQuery, statusFilter, genderFilter, yearFilter, currentPage, baseurl]);
+    const result = await response.json();
 
- 
+    if (result.success) {
+      // Remove from selection if selected
+      setSelectedUsers((prev) => prev.filter((id) => id !== uid));
 
-
-
-
-
-  // Handle user approval
-  const handleApprove = async (userId: number) => {
-    try {
-      const response = await fetch(`${baseurl}/admin/pending-user/${userId}/approve`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          action: 'approve',
-          userId: userId,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.success) {
-        // Update local state
-        setUsers((prev) =>
-          prev.map((user) =>
-            user.id === userId ? { ...user, status: "active" } : user
-          )
-        );
-        toast({
-          title: "User Approved",
-          description: "The user has been approved and is now active.",
-        });
-      } else {
-        throw new Error(result.message || 'Failed to approve user');
-      }
-    } catch (error) {
-      console.error('Error approving user:', error);
       toast({
-        title: "Error",
-        description: "Failed to approve user. Please try again.",
-        variant: "destructive",
+        title: "✅ User Approved Successfully",
+        description: "The user's status has been updated to Approved.",
       });
+    } else {
+      throw new Error(result.message || "Failed to approve user");
     }
-  };
+  } catch (error) {
+    console.error("Error approving user:", error);
 
-  // Handle user ban
-  const handleBan = async (userId: number) => {
-    try {
-      const response = await fetch(`/api/pending-user/${userId}/ban`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          action: 'ban',
-          userId: userId,
-          reason: 'Banned by administrator', // You might want to add a reason input
-        }),
-      });
+    // Rollback UI changes
+    setUsers(oldUsers);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+    toast({
+      title: "❌ Approval Failed",
+      description: "Failed to approve user. Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setApprovingUsers((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(uid);
+      return newSet;
+    });
+  }
+};
 
-      const result = await response.json();
-      
-      if (result.success) {
-        // Update local state
-        setUsers((prev) =>
-          prev.map((user) =>
-            user.id === userId ? { ...user, status: "banned" } : user
-          )
-        );
-        toast({
-          title: "User Banned",
-          description: "The user has been banned.",
-        });
-      } else {
-        throw new Error(result.message || 'Failed to ban user');
-      }
-    } catch (error) {
-      console.error('Error banning user:', error);
+
+
+
+// Handle user ban with optimistic UI update
+const handleBan = async (uid: string) => {
+  setBanningUsers((prev) => new Set([...prev, uid]));
+
+  // Store old users list for rollback in case of error
+  const oldUsers = [...users];
+
+  // Instant UI update (change profile_state to "Banned")
+  setUsers((prev) =>
+    prev.map((user) =>
+      user.uid === uid ? { ...user, profile_state: "Banned" } : user
+    )
+  );
+
+  try {
+    console.log("Banning user with UID:", uid);
+    const response = await fetch(`${baseurl}/admin/user-state`, {
+      method: "PUT",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        statedata: "Banned",
+        uid: uid,
+        reason: "Banned by administrator",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    setBadgeState(result.state);
+
+    if (result.success) {
+     
+      setSelectedUsers((prev) => prev.filter((id) => id !== uid));
       toast({
-        title: "Error",
-        description: "Failed to ban user. Please try again.",
-        variant: "destructive",
+        title: "🚫 User Banned Successfully",
+        description:
+          "The user's status has been updated to Banned.",
       });
+    } else {
+      throw new Error(result.message || "Failed to ban user");
     }
-  };
+  } catch (error) {
+    console.error("Error banning user:", error);
+
+    // Rollback UI changes
+    setUsers(oldUsers);
+
+    toast({
+      title: "❌ Ban Failed",
+      description: "Failed to ban user. Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setBanningUsers((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(uid);
+      return newSet;
+    });
+  }
+};
+
 
   // Handle user resolution
-  const handleResolve = async (userId: number) => {
+  const handleResolve = async (userId: string) => {
     try {
-      const response = await fetch(`/api/pending-user/${userId}/resolve`, {
+      const response = await fetch(`${baseurl}/admin/pending-user/${userId}/resolve`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           action: 'resolve',
@@ -246,7 +333,7 @@ export default function ManageUsers() {
         // Update local state
         setUsers((prev) =>
           prev.map((user) =>
-            user.id === userId ? { ...user, status: "resolved" } : user
+            user.uid === userId ? { ...user, register_state: "resolved" } : user
           )
         );
         toast({
@@ -270,13 +357,14 @@ export default function ManageUsers() {
   const handleBulkApprove = async () => {
     if (selectedUsers.length === 0) return;
 
+    setBulkApproving(true);
+    
     try {
-      const response = await fetch('/api/pending-user/bulk-approve', {
+      const response = await fetch(`${baseurl}/admin/pending-user/bulk-approve`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           userIds: selectedUsers,
@@ -291,12 +379,21 @@ export default function ManageUsers() {
       const result = await response.json();
       
       if (result.success) {
-        // Refresh the data
+        const approvedCount = selectedUsers.length;
         
+        // Remove approved users from table
+        setUsers((prev) => prev.filter((user) => !selectedUsers.includes(user.uid)));
+        
+        // Clear selections
         setSelectedUsers([]);
+        
+        // Update total count
+        setTotalCount(prev => prev - approvedCount);
+        
         toast({
-          title: "Users Approved",
-          description: `${selectedUsers.length} users have been approved.`,
+          title: "🎉 Bulk Approval Successful",
+          description: `${approvedCount} users have been approved and are now active.`,
+          
         });
       } else {
         throw new Error(result.message || 'Failed to approve users');
@@ -304,16 +401,18 @@ export default function ManageUsers() {
     } catch (error) {
       console.error('Error bulk approving users:', error);
       toast({
-        title: "Error",
+        title: "❌ Bulk Approval Failed",
         description: "Failed to approve selected users. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setBulkApproving(false);
     }
   };
 
-  const filteredUsers = users; // Users are now filtered on the server side
+  const filteredUsers = users;
 
-  const toggleSelectUser = (userId: number) => {
+  const toggleSelectUser = (userId: string) => {
     setSelectedUsers((prev) =>
       prev.includes(userId)
         ? prev.filter((id) => id !== userId)
@@ -325,46 +424,50 @@ export default function ManageUsers() {
     if (selectedUsers.length === filteredUsers.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(filteredUsers.map((user) => user.id));
+      setSelectedUsers(filteredUsers.map((user) => user.uid));
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return (
-          <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 hover:from-green-200 hover:to-emerald-200 border border-green-300 dark:from-green-900/30 dark:to-emerald-900/30 dark:text-green-400 dark:border-green-700">
-            Active
-          </Badge>
-        );
-      case "pending":
-        return (
-          <Badge className="bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 hover:from-yellow-200 hover:to-orange-200 border border-yellow-300 dark:from-yellow-900/30 dark:to-orange-900/30 dark:text-yellow-400 dark:border-yellow-700">
-            Pending
-          </Badge>
-        );
-      case "banned":
-        return (
-          <Badge className="bg-gradient-to-r from-red-100 to-pink-100 text-red-800 hover:from-red-200 hover:to-pink-200 border border-red-300 dark:from-red-900/30 dark:to-pink-900/30 dark:text-red-400 dark:border-red-700">
-            Banned
-          </Badge>
-        );
-      case "resolved":
-        return (
-          <Badge className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 hover:from-blue-200 hover:to-indigo-200 border border-blue-300 dark:from-blue-900/30 dark:to-indigo-900/30 dark:text-blue-400 dark:border-blue-700">
-            Resolved
-          </Badge>
-        );
-      default:
-        return (
-          <Badge
-            variant="outline"
-            className="border-gray-300 dark:border-gray-600"
-          >
-            {status}
-          </Badge>
-        );
-    }
+const getStatusBadge = (status?: string) => {
+  switch (status) {
+    case "Approved":
+      return (
+        <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 hover:from-green-200 hover:to-emerald-200 border border-green-300 dark:from-green-900/30 dark:to-emerald-900/30 dark:text-green-400 dark:border-green-700">
+          Active
+        </Badge>
+      );
+    case "pending":
+      return (
+        <Badge className="bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 hover:from-yellow-200 hover:to-orange-200 border border-yellow-300 dark:from-yellow-900/30 dark:to-orange-900/30 dark:text-yellow-400 dark:border-yellow-700">
+          Pending
+        </Badge>
+      );
+    case "Banned":
+      return (
+        <Badge className="bg-gradient-to-r from-red-100 to-pink-100 text-red-800 hover:from-red-200 hover:to-pink-200 border border-red-300 dark:from-red-900/30 dark:to-pink-900/30 dark:text-red-400 dark:border-red-700">
+          Banned
+        </Badge>
+      );
+    default:
+      return null;
+  }
+};
+
+useEffect(() => {
+  getStatusBadge();
+  console.log("Effect triggered due to handleBan or handleApprove change");
+}, [handleBan, handleApprove]);
+
+
+  
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -391,10 +494,20 @@ export default function ManageUsers() {
                   <Button
                     size="sm"
                     onClick={handleBulkApprove}
-                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                    disabled={bulkApproving}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <Check className="h-4 w-4 mr-1" />
-                    Approve Selected
+                    {bulkApproving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        Approving...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-1" />
+                        Approve Selected
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -460,7 +573,7 @@ export default function ManageUsers() {
         </Card>
 
         {/* Table */}
-        <Card className="flex-1 min-h-0 overflow-hidden bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-gray-200/80 dark:border-gray-800/80 shadow-lg">
+        <Card className=" flex-1 min-h-0 overflow-hidden bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-gray-200/80 dark:border-gray-800/80 shadow-lg">
           <CardHeader className="py-4 flex-none border-b border-gray-200/50 dark:border-gray-800/50">
             <CardTitle className="text-gray-900 dark:text-white">
               Users ({filteredUsers.length})
@@ -486,7 +599,7 @@ export default function ManageUsers() {
                       <th className="p-4 text-left font-semibold">User</th>
                       <th className="p-4 text-left font-semibold">Email</th>
                       <th className="p-4 text-left font-semibold">Gender</th>
-                      <th className="p-4 text-left font-semibold">Year</th>
+                      <th className="p-4 text-left font-semibold">University Year</th>
                       <th className="p-4 text-left font-semibold">Status</th>
                       <th className="p-4 text-left font-semibold">Actions</th>
                     </tr>
@@ -508,77 +621,108 @@ export default function ManageUsers() {
                         </td>
                       </tr>
                     ) : (
-                      filteredUsers.map((user) => (
-                      <tr
-                        key={user.id}
-                        className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors duration-200"
-                      >
-                        <td className="p-4">
-                          <Checkbox
-                            checked={selectedUsers.includes(user.id)}
-                            onCheckedChange={() => toggleSelectUser(user.id)}
-                            className="border-gray-300 dark:border-gray-600"
-                          />
-                        </td>
-                        <td className="p-4">
-                          {/* <div className="flex items-center gap-3">
-                            <Avatar className="ring-2 ring-gray-200 dark:ring-gray-700">
-                              <AvatarImage src={user.avatar} alt={user.name} />
-                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                                {user.name.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white">
-                                {user.name}
+                      filteredUsers.map((user) => {
+                        const isApproving = approvingUsers.has(user.uid);
+                        const isBanning = banningUsers.has(user.uid);
+                        
+                        return (
+                          <tr
+                            key={user.uid}
+                            className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors duration-200"
+                          >
+                            <td className="p-4">
+                              <Checkbox
+                                checked={selectedUsers.includes(user.uid)}
+                                onCheckedChange={() => toggleSelectUser(user.uid)}
+                                className="border-gray-300 dark:border-gray-600"
+                                disabled={isApproving || isBanning}
+                              />
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage
+                                    src={user.profilePicture || undefined}
+                                    alt={user.fullName}
+                                  />
+                                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                                    {getUserInitials(user.fullName)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium text-gray-900 dark:text-white">
+                                    {user.fullName}
+                                  </p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    {user.university?.name || 'No university'}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {user.university}
+                            </td>
+                            <td className="p-4 text-sm text-gray-700 dark:text-gray-300">
+                              {user.email || 'N/A'}
+                            </td>
+                            <td className="p-4 text-sm text-gray-700 dark:text-gray-300">
+                              {user.Gender || 'N/A'}
+                            </td>
+                            <td className="p-4 text-sm text-gray-700 dark:text-gray-300">
+                              {user.university?.universityYear || 'N/A'}
+                            </td>
+                            <td className="p-4">{getStatusBadge(user.profile_state)}</td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApprove(user.uid)}
+                                  disabled={
+                                    isApproving || 
+                                    isBanning ||
+                                    user.profile_state === "active" ||
+                                    user.profile_state === "resolved"
+                                  }
+                                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed min-w-[90px]"
+                                >
+                                  {isApproving ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                      Approving...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="h-4 w-4 mr-1" />
+                                      Approve
+                                    </>
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleBan(user.uid)}
+                                  disabled={
+                                    isApproving || 
+                                    isBanning ||
+                                    user.register_state === "banned" ||
+                                    user.register_state === "resolved"
+                                  }
+                                  className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed min-w-[80px]"
+                                >
+                                  {isBanning ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                      Banning...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserX className="h-4 w-4 mr-1" />
+                                      Banned
+                                    </>
+                                  )}
+                                </Button>
                               </div>
-                            </div>
-                          </div> */}
-                        </td>
-                        <td className="p-4 text-sm text-gray-700 dark:text-gray-300">
-                          {user.email}
-                        </td>
-                        <td className="p-4 text-sm text-gray-700 dark:text-gray-300">
-                          {user.gender}
-                        </td>
-                        <td className="p-4 text-sm text-gray-700 dark:text-gray-300">
-                          {user.year}
-                        </td>
-                        <td className="p-4">{getStatusBadge(user.profile_states)}</td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => handleApprove(user.id)}
-                              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md transition-all duration-200"
-                              disabled={
-                                user.profile_states === "active" ||
-                                user.profile_states === "resolved"
-                              }
-                            >
-                              <Check className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleBan(user.id)}
-                              className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 shadow-md transition-all duration-200"
-                              disabled={
-                                user.profile_states === "banned" ||
-                                user.profile_states === "resolved"
-                              }
-                            >
-                              <UserX className="h-4 w-4 mr-1" />
-                              Ban
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
