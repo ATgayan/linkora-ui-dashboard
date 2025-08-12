@@ -25,20 +25,50 @@ import {
 import DashboardLayout from "../dashboard";
 
 interface ReportedUser {
-  id: number;
-  name: string;
-  email: string;
+  id: String;
+  reportedUserName: string;
+  reportedUserId: string;
+  reporterName: string;
   reason: string;
   status: string;
   reportedAt: string;
   avatar: string;
 }
 
-// Fetch the list of reported users from backend API
+const baseurl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+// Your fetch function to get reported users
 const fetchReportedUsers = async (): Promise<ReportedUser[]> => {
-  const res = await fetch("http://localhost:3007/api/reported-users");
+  const res = await fetch(`${baseurl}/admin/get-reported-users`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch reported users: ${res.statusText}`);
+  }
+
   return res.json();
 };
+
+// Example async function to call fetchReportedUsers and get data
+async function loadReportedUsers() {
+  try {
+    const reportedUsers = await fetchReportedUsers();
+    console.log("Reported users data:", reportedUsers);
+    // Use reportedUsers array here
+  } catch (error) {
+    console.error("Error fetching reported users:", error);
+  }
+}
+
+// Call the function (for example in your app init or component)
+loadReportedUsers();
+
+
 
 export default function Reports() {
   const [reports, setReports] = useState<ReportedUser[]>([]);
@@ -53,36 +83,44 @@ export default function Reports() {
   }, []);
 
   // Mark a report as resolved on the server, then update local state
-  const handleResolve = async (id: number) => {
-    try {
-      const response = await fetch(
-        `http://localhost:3007/api/reported-users/${id}/resolve`,
-        {
-          method: "PUT",
-        }
-      );
-      if (response.ok) {
-        setReports(
-          reports.map((report) =>
-            report.id === id ? { ...report, status: "resolved" } : report
-          )
-        );
+ const handleResolve = async (userId: string, reportId: string) => {
+  try {
+    console.log('resolving report with userId:', userId, 'and reportId:', reportId);
+    const response = await fetch(`${baseurl}/admin/resolve-report`,
+      {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, reportId }),
       }
-    } catch (error) {
-      console.error("Error resolving report:", error);
-    }
-  };
+    );
 
-  // Filter reports based on search text and selected status
-  const filteredReports = reports.filter((report) => {
-    const matchesSearch =
-      report.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reason.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || report.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+    if (response.ok) {
+      // Update local state: remove the resolved report from the reports array
+      setReports(reports.filter(report => report.id !== reportId));
+    } else {
+      const errorData = await response.json();
+      console.error("Failed to resolve report:", errorData.error);
+    }
+  } catch (error) {
+    console.error("Error resolving report:", error);
+  }
+};
+
+
+ 
+ // Replace your existing filteredReports logic with this:
+const filteredReports = reports.filter((report) => {
+  const matchesSearch =
+    (report.reportedUserName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (report.reporterName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (report.reason || "").toLowerCase().includes(searchQuery.toLowerCase());
+  const matchesStatus =
+    statusFilter === "all" || report.status === statusFilter;
+  return matchesSearch && matchesStatus;
+});
 
   return (
     <DashboardLayout>
@@ -205,7 +243,7 @@ export default function Reports() {
                     <tr className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       <th className="p-4 text-left font-semibold">Avatar</th>
                       <th className="p-4 text-left font-semibold">Name</th>
-                      <th className="p-4 text-left font-semibold">Email</th>
+                      <th className="p-4 text-left font-semibold">Reporter Email</th>
                       <th className="p-4 text-left font-semibold">Reason</th>
                       <th className="p-4 text-left font-semibold">Status</th>
                       <th className="p-4 text-left font-semibold">
@@ -222,25 +260,25 @@ export default function Reports() {
                       )
                       .map((report) => (
                         <tr
-                          key={report.id}
+                          key={report.id.toString()}
                           className="border-b border-gray-200/50 dark:border-gray-800/50 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors duration-200"
                         >
                           <td className="p-4">
                             <Avatar className="ring-2 ring-gray-200 dark:ring-gray-700">
                               <AvatarImage
                                 src={report.avatar}
-                                alt={report.name}
+                                alt={report.reportedUserName}
                               />
-                              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                              {/* <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                                 {report.name.charAt(0)}
-                              </AvatarFallback>
+                              </AvatarFallback> */}
                             </Avatar>
                           </td>
                           <td className="p-4 font-medium text-gray-900 dark:text-white">
-                            {report.name}
+                            {report.reportedUserName}
                           </td>
                           <td className="p-4 text-gray-700 dark:text-gray-300">
-                            {report.email}
+                            {report.reporterName}
                           </td>
                           <td className="p-4 text-gray-700 dark:text-gray-300">
                             {report.reason}
@@ -257,7 +295,9 @@ export default function Reports() {
                                 variant="outline"
                                 size="sm"
                                 className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 hover:from-green-200 hover:to-emerald-200 border-green-300 dark:from-green-900/30 dark:to-emerald-900/30 dark:text-green-400 dark:border-green-700 dark:hover:from-green-800/50 dark:hover:to-emerald-800/50"
-                                onClick={() => handleResolve(report.id)}
+                                onClick={() => handleResolve( report.reportedUserId, report.id.toString())}
+                                
+
                               >
                                 Resolve
                               </Button>
